@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 export type EmailMessage = {
   to: string;
@@ -16,34 +16,43 @@ export interface EmailProvider {
 }
 
 /**
- * No provider is configured yet (no RESEND_API_KEY set).
+ * No provider is configured yet (no SMTP env vars set).
  * Every call is a no-op that reports why nothing went out, so callers can
  * log it accurately instead of pretending to send.
  */
 class NoopEmailProvider implements EmailProvider {
   async send(_message: EmailMessage): Promise<EmailSendResult> {
-    return { sent: false, reason: "No email provider configured. Set RESEND_API_KEY." };
+    return { sent: false, reason: "No email provider configured. Set SMTP_USER / SMTP_APP_PASSWORD." };
   }
 }
 
-class ResendProvider implements EmailProvider {
-  private client: Resend;
+/** Sends via a Google Workspace mailbox using an App Password over SMTP. */
+class GoogleWorkspaceProvider implements EmailProvider {
+  private transporter: ReturnType<typeof nodemailer.createTransport>;
   private from: string;
 
-  constructor(apiKey: string, from: string) {
-    this.client = new Resend(apiKey);
-    this.from = from;
+  constructor(user: string, appPassword: string) {
+    this.from = user;
+    this.transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user, pass: appPassword },
+    });
   }
 
   async send(message: EmailMessage): Promise<EmailSendResult> {
-    const { error } = await this.client.emails.send({
-      from: this.from,
-      to: message.to,
-      subject: message.subject,
-      text: message.body,
-    });
-    if (error) return { sent: false, reason: error.message };
-    return { sent: true };
+    try {
+      await this.transporter.sendMail({
+        from: `Creative & Production Dashboard <${this.from}>`,
+        to: message.to,
+        subject: message.subject,
+        text: message.body,
+      });
+      return { sent: true };
+    } catch (err) {
+      return { sent: false, reason: err instanceof Error ? err.message : "SMTP send failed" };
+    }
   }
 }
 
@@ -51,8 +60,8 @@ let cached: EmailProvider | null = null;
 
 export function getEmailProvider(): EmailProvider {
   if (cached) return cached;
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM ?? "Creative & Production Dashboard <onboarding@resend.dev>";
-  cached = apiKey ? new ResendProvider(apiKey, from) : new NoopEmailProvider();
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_APP_PASSWORD;
+  cached = user && pass ? new GoogleWorkspaceProvider(user, pass) : new NoopEmailProvider();
   return cached;
 }
