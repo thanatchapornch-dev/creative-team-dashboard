@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --navy: #0f1b33;
+  --navy-soft: #16244a;
+  --offwhite: #f7f5f0;
+  --orange: #ff7a33;
+  --lime: #b6e64b;
+  --ink: #1b1f2a;
+  --paper: #ffffff;
+  --line: #e6e2d8;
+  --muted: #8a8f9c;
+
+  --background: var(--offwhite);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-offwhite: var(--offwhite);
+  --color-orange: var(--orange);
+  --color-lime: var(--lime);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 27, 51, 0.04);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.pill-navy { background: var(--navy); color: var(--offwhite); }
+.pill-orange { background: color-mix(in srgb, var(--orange) 16%, white); color: color-mix(in srgb, var(--orange) 80%, black); }
+.pill-lime { background: color-mix(in srgb, var(--lime) 24%, white); color: color-mix(in srgb, var(--lime) 45%, black); }
+.pill-muted { background: color-mix(in srgb, var(--muted) 14%, white); color: var(--muted); }
+.pill-red { background: #fde4e1; color: #c0392b; }
+
+.progress-track {
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--navy-soft);
+  color: var(--offwhite);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
 }

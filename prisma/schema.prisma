@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  LEADER
+  ADMIN
+}
+
+enum StatusToday {
+  AVAILABLE
+  BUSY
+  WORKING
+  LEAVE
+  URGENT
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  WAITING
+  REVIEW
+  DONE
+  BLOCKED
+}
+
+enum Priority {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum LeaveType {
+  ANNUAL
+  BUSINESS
+  SICK
+  OTHER
+  URGENT
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OvertimeCategory {
+  CAMPAIGN_DEADLINE
+  EVENT
+  OPENING
+  URGENT_REQUEST
+  PRODUCTION
+  EDITING
+  SHOOT
+  OTHER
+}
+
+enum OvertimeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+enum NotificationStatus {
+  SENT
+  QUEUED
+  FAILED
+  SKIPPED_NO_PROVIDER
+}
+
+model Member {
+  id                 String   @id @default(cuid())
+  name               String
+  nickname           String   @unique
+  position           String
+  role               Role     @default(MEMBER)
+  workEmail          String   @default("")
+  profilePictureUrl  String   @default("")
+  pinHash            String
+  statusToday        StatusToday @default(AVAILABLE)
+  dailyCapacityHours Float    @default(8)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  requestedTasks   Task[] @relation("Requester")
+  ownedTasks       Task[] @relation("Owner")
+  backupTasks      Task[] @relation("Backup")
+  leaveRequests    LeaveRequest[] @relation("Employee")
+  approvedLeaves   LeaveRequest[] @relation("Approver")
+  overtimeEntries  OvertimeEntry[] @relation("OvertimeEmployee")
+  approvedOvertime OvertimeEntry[] @relation("OvertimeApprover")
+  notifications    NotificationLog[] @relation("Recipient")
+}
+
+model Task {
+  id            String     @id @default(cuid())
+  taskCode      String     @unique
+  name          String
+  project       String
+  requesterId   String
+  requester     Member     @relation("Requester", fields: [requesterId], references: [id])
+  ownerId       String
+  owner         Member     @relation("Owner", fields: [ownerId], references: [id])
+  backupId      String?
+  backup        Member?    @relation("Backup", fields: [backupId], references: [id])
+  priority      Priority   @default(MEDIUM)
+  brief         String     @default("")
+  startDate     DateTime
+  dueDate       DateTime
+  status        TaskStatus @default(BACKLOG)
+  estimatedHours Float     @default(1)
+  notes         String     @default("")
+  attachmentUrl String     @default("")
+  createdAt     DateTime   @default(now())
+  completedAt   DateTime?
+  updatedAt     DateTime   @updatedAt
+}
+
+model LeaveRequest {
+  id                 String      @id @default(cuid())
+  employeeId         String
+  employee           Member      @relation("Employee", fields: [employeeId], references: [id])
+  leaveType          LeaveType
+  reason             String
+  startDate          DateTime
+  endDate            DateTime
+  leaveDays          Float
+  requestedAt        DateTime    @default(now())
+  status             LeaveStatus @default(PENDING)
+  approverId         String?
+  approver           Member?     @relation("Approver", fields: [approverId], references: [id])
+  decidedAt          DateTime?
+  approvalDeadline   DateTime
+  advanceNoticeDays  Int
+  attachmentUrl      String      @default("")
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+model OvertimeEntry {
+  id           String           @id @default(cuid())
+  employeeId   String
+  employee     Member           @relation("OvertimeEmployee", fields: [employeeId], references: [id])
+  date         DateTime
+  project      String
+  task         String
+  startTime    String
+  endTime      String
+  totalHours   Float
+  category     OvertimeCategory @default(OTHER)
+  reason       String           @default("")
+  approvedById String?
+  approvedBy   Member?          @relation("OvertimeApprover", fields: [approvedById], references: [id])
+  status       OvertimeStatus   @default(PENDING)
+  notes        String           @default("")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model NotificationLog {
+  id          String              @id @default(cuid())
+  recipientId String
+  recipient   Member              @relation("Recipient", fields: [recipientId], references: [id])
+  type        String
+  title       String
+  body        String
+  relatedType String              @default("")
+  relatedId   String              @default("")
+  channel     NotificationChannel @default(IN_APP)
+  status      NotificationStatus  @default(SENT)
+  createdAt   DateTime            @default(now())
+  readAt      DateTime?
+}
+
+model Settings {
+  id                     Int      @id @default(1)
+  companyName            String   @default("Creative & Production")
+  workingDays            String   @default("MON,TUE,WED,THU,FRI")
+  holidays               String   @default("[]")
+  annualLeaveNoticeDays  Int      @default(7)
+  approvalSlaDays        Int      @default(3)
+  taskReminderDaysBefore Int      @default(2)
+  themeColors            String   @default("{\"navy\":\"#0F1B33\",\"offwhite\":\"#F7F5F0\",\"orange\":\"#FF7A33\",\"lime\":\"#B6E64B\"}")
+  updatedAt              DateTime @updatedAt
+}
