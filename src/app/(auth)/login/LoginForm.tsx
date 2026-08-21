@@ -39,7 +39,6 @@ export function LoginForm({
           >
             <Avatar name={m.nickname} src={m.profilePictureUrl} size={56} />
             <span className="font-semibold text-sm">{m.nickname}</span>
-            <span className="text-xs text-[var(--muted)]">{m.position}</span>
           </button>
         ))}
       </div>
