@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentMember } from "@/lib/auth";
+import { sortLeaderFirst } from "@/lib/members";
 import { LeaveRequestForm } from "@/components/LeaveRequestForm";
 import { LogLeaveForTeamForm } from "@/components/LogLeaveForTeamForm";
 import { LeaveStatusPill, LeaveTypePill } from "@/components/Pills";
@@ -13,7 +14,7 @@ export default async function LeavePage() {
   const yearStart = new Date(new Date().getFullYear(), 0, 1);
   const yearEnd = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999);
 
-  const [myLeaves, allApproved, members] = await Promise.all([
+  const [myLeaves, allApproved, membersRaw] = await Promise.all([
     prisma.leaveRequest.findMany({ where: { employeeId: member.id }, orderBy: { requestedAt: "desc" } }),
     prisma.leaveRequest.findMany({
       where: { status: "APPROVED", startDate: { gte: yearStart, lte: yearEnd } },
@@ -21,6 +22,7 @@ export default async function LeavePage() {
     }),
     prisma.member.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
+  const members = sortLeaderFirst(membersRaw);
 
   const summary = members.map((m) => {
     const totals: Record<string, number> = { ANNUAL: 0, BUSINESS: 0, SICK: 0, OTHER: 0, URGENT: 0 };

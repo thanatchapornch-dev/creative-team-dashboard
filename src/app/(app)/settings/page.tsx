@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentMember } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
+import { sortLeaderFirst } from "@/lib/members";
 import { ProfileSettingsForm } from "@/components/ProfileSettingsForm";
 import { CompanySettingsForm } from "@/components/CompanySettingsForm";
 import { MembersAdminSection } from "@/components/MembersAdminSection";
@@ -10,10 +11,11 @@ export default async function SettingsPage() {
   if (!member) return null;
   const isAdmin = member.role === "LEADER" || member.role === "ADMIN";
 
-  const [settings, members] = await Promise.all([
+  const [settings, membersRaw] = await Promise.all([
     getSettings(),
     isAdmin ? prisma.member.findMany({ orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
   ]);
+  const members = sortLeaderFirst(membersRaw);
 
   return (
     <div className="flex flex-col gap-6 pt-2 max-w-3xl">
