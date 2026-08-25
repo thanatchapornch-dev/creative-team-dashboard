@@ -1,5 +1,4 @@
 import { prisma } from "./prisma";
-import { getEmailProvider } from "./email/provider";
 
 export type NotifyInput = {
   recipientId: string;
@@ -13,9 +12,13 @@ export type NotifyInput = {
 
 /**
  * Every automation event goes through here: always logged in-app, and — when
- * sendEmail is requested — attempts the configured email provider. With no
- * provider wired yet this records SKIPPED_NO_PROVIDER instead of silently
- * dropping the event, so the audit trail (who/when/what/status) stays honest.
+ * sendEmail is requested — queued for the Apps Script relay to pick up.
+ *
+ * Email is queued rather than sent directly because this org's Workspace
+ * policy blocks inbound calls to Apps Script Web Apps from outside Google,
+ * so a push model (this app calling out to send mail) can't work here. The
+ * relay instead polls GET /api/email-queue from inside Apps Script itself,
+ * which Workspace does allow, and calls MailApp.sendEmail there.
  */
 export async function notify(input: NotifyInput) {
   const inApp = await prisma.notificationLog.create({
@@ -34,29 +37,6 @@ export async function notify(input: NotifyInput) {
   if (!input.sendEmail) return { inApp };
 
   const recipient = await prisma.member.findUnique({ where: { id: input.recipientId } });
-  const provider = getEmailProvider();
-
-  if (!recipient?.workEmail) {
-    const emailLog = await prisma.notificationLog.create({
-      data: {
-        recipientId: input.recipientId,
-        type: input.type,
-        title: input.title,
-        body: input.body,
-        relatedType: input.relatedType ?? "",
-        relatedId: input.relatedId ?? "",
-        channel: "EMAIL",
-        status: "SKIPPED_NO_PROVIDER",
-      },
-    });
-    return { inApp, email: emailLog };
-  }
-
-  const result = await provider.send({
-    to: recipient.workEmail,
-    subject: input.title,
-    body: input.body,
-  });
 
   const emailLog = await prisma.notificationLog.create({
     data: {
@@ -67,7 +47,7 @@ export async function notify(input: NotifyInput) {
       relatedType: input.relatedType ?? "",
       relatedId: input.relatedId ?? "",
       channel: "EMAIL",
-      status: result.sent ? "SENT" : "SKIPPED_NO_PROVIDER",
+      status: recipient?.workEmail ? "QUEUED" : "SKIPPED_NO_PROVIDER",
     },
   });
 
