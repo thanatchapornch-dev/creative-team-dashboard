@@ -4,6 +4,7 @@ import { deriveTaskBadge } from "@/lib/task-status";
 import { PriorityPill, TaskBadgePill } from "@/components/Pills";
 import { TaskStatusSelect } from "@/components/TaskStatusSelect";
 import { TaskCreateModal } from "@/components/TaskCreateModal";
+import { TaskEditModal } from "@/components/TaskEditModal";
 import { TeamQueueFilters } from "@/components/TeamQueueFilters";
 
 const STATUS_COLUMNS = ["BACKLOG", "TODO", "IN_PROGRESS", "WAITING", "REVIEW", "DONE", "BLOCKED"];
@@ -86,7 +87,26 @@ export default async function TeamQueuePage({
                 <div className="flex flex-col gap-2">
                   {colTasks.map((t) => (
                     <div key={t.id} className="card p-3 flex flex-col gap-2 text-xs">
-                      <p className="font-medium">{t.name}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium">{t.name}</p>
+                        <TaskEditModal
+                          task={{
+                            id: t.id,
+                            name: t.name,
+                            project: t.project,
+                            ownerId: t.ownerId,
+                            backupId: t.backupId,
+                            priority: t.priority,
+                            brief: t.brief,
+                            startDate: t.startDate.toISOString().slice(0, 10),
+                            dueDate: t.dueDate.toISOString().slice(0, 10),
+                            estimatedHours: t.estimatedHours,
+                            notes: t.notes,
+                            attachmentUrl: t.attachmentUrl,
+                          }}
+                          members={members}
+                        />
+                      </div>
                       <p className="text-[var(--muted)]">{t.owner.nickname} · {t.project}</p>
                       <div className="flex items-center gap-1 flex-wrap">
                         <PriorityPill priority={t.priority} />

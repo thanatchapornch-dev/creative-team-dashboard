@@ -4,6 +4,7 @@ import { deriveTaskBadge } from "@/lib/task-status";
 import { PriorityPill, TaskBadgePill, TaskStatusPill } from "@/components/Pills";
 import { TaskStatusSelect } from "@/components/TaskStatusSelect";
 import { TaskCreateModal } from "@/components/TaskCreateModal";
+import { TaskEditModal } from "@/components/TaskEditModal";
 
 export default async function MyTasksPage() {
   const member = await getCurrentMember();
@@ -44,6 +45,23 @@ export default async function MyTasksPage() {
               <PriorityPill priority={t.priority} />
               <TaskBadgePill badge={deriveTaskBadge(t.dueDate, t.status, now)} />
               <TaskStatusSelect taskId={t.id} status={t.status} />
+              <TaskEditModal
+                task={{
+                  id: t.id,
+                  name: t.name,
+                  project: t.project,
+                  ownerId: t.ownerId,
+                  backupId: t.backupId,
+                  priority: t.priority,
+                  brief: t.brief,
+                  startDate: t.startDate.toISOString().slice(0, 10),
+                  dueDate: t.dueDate.toISOString().slice(0, 10),
+                  estimatedHours: t.estimatedHours,
+                  notes: t.notes,
+                  attachmentUrl: t.attachmentUrl,
+                }}
+                members={members}
+              />
             </div>
           </div>
         ))}
