@@ -96,7 +96,7 @@ export function CompanySettingsForm({ settings }: { settings: ResolvedSettings }
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label className="text-xs text-[var(--muted)] flex flex-col gap-1">
           Annual Leave Notice (days)
           <input name="annualLeaveNoticeDays" type="number" min={0} defaultValue={settings.annualLeaveNoticeDays} className="input" />
@@ -113,7 +113,7 @@ export function CompanySettingsForm({ settings }: { settings: ResolvedSettings }
 
       <div>
         <p className="text-xs text-[var(--muted)] mb-2">Theme Colors</p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(["navy", "offwhite", "orange", "lime"] as const).map((key) => (
             <label key={key} className="flex flex-col items-center gap-1 text-xs">
               {key}

@@ -35,7 +35,7 @@ export default async function ReportsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">
           Leave Report ({now.getFullYear()})
         </h2>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <div className="card p-4"><p className="text-xs text-[var(--muted)]">Total Leave Days</p><p className="text-2xl font-bold">{totalDays}</p></div>
           <div className="card p-4"><p className="text-xs text-[var(--muted)]">Approved</p><p className="text-2xl font-bold">{approved.length}</p></div>
           <div className="card p-4"><p className="text-xs text-[var(--muted)]">Pending</p><p className="text-2xl font-bold">{pending.length}</p></div>
@@ -47,7 +47,7 @@ export default async function ReportsPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Team Capacity (This Week)</h2>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {members.map((m) => {
             const l = loadByMember.get(m.id);
             return (

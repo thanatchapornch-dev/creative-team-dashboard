@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-8 pt-2">
       <section>
         <h1 className="text-xl font-bold mb-4">TODAY · {dateLabel}</h1>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {members.map((m) => (
             <div key={m.id} className="card p-4 flex flex-col items-center gap-2 text-center">
               <Avatar name={m.nickname} src={m.profilePictureUrl} size={56} />
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Today</h2>
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <SummaryCard label="Due Today" value={today.dueToday} tone="orange" />
           <SummaryCard label="Overdue" value={today.overdue} tone="orange" />
           <SummaryCard label="Due Soon" value={today.dueSoon} />
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Team</h2>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <SummaryCard label="Total Open Tasks" value={team.totalOpen} tone="lime" />
           <SummaryCard label="Completed This Week" value={team.completedThisWeek} tone="lime" />
           <SummaryCard label="Team Leave This Month" value={`${team.leaveThisMonth} days`} />

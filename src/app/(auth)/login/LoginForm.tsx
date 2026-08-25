@@ -26,7 +26,7 @@ export function LoginForm({
 
   return (
     <div className="w-full max-w-2xl">
-      <div className="grid grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
         {members.map((m) => (
           <button
             key={m.id}

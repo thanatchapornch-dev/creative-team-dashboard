@@ -57,7 +57,7 @@ export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOp
             <h2 className="font-bold text-lg">New Task</h2>
             <input name="name" placeholder="Task Name" required className="input" />
             <input name="project" placeholder="Project / Campaign" required className="input" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <select name="ownerId" defaultValue={defaultOwnerId} required className="input">
                 <option value="" disabled>Owner</option>
                 {members.map((m) => (
@@ -71,7 +71,7 @@ export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOp
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <select name="priority" defaultValue="MEDIUM" className="input">
                 {PRIORITIES.map((p) => (
                   <option key={p} value={p}>{p}</option>
@@ -79,7 +79,7 @@ export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOp
               </select>
               <input name="estimatedHours" type="number" min="0.5" step="0.5" defaultValue={2} className="input" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="text-xs text-[var(--muted)] flex flex-col gap-1">
                 Start Date
                 <input name="startDate" type="date" defaultValue={today} required className="input" />

@@ -38,10 +38,10 @@ export default async function LeavePage() {
     <div className="flex flex-col gap-6 pt-2">
       <h1 className="text-xl font-bold">Leave</h1>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <LeaveRequestForm />
 
-        <div className="col-span-2 card p-5">
+        <div className="md:col-span-2 card p-5">
           <h2 className="font-bold mb-3">My Leave History</h2>
           <div className="flex flex-col gap-2">
             {myLeaves.map((l) => (

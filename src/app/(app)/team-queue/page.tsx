@@ -51,7 +51,7 @@ export default async function TeamQueuePage({
       <TeamQueueFilters members={members.map((m) => ({ id: m.id, label: m.nickname }))} projects={projects} />
 
       {view === "member" ? (
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {members
             .filter((m) => !params.member || m.id === params.member)
             .map((m) => {

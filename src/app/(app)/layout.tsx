@@ -22,8 +22,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen" style={{ background: "var(--offwhite)" }}>
       <AutoRefresh />
       <Sidebar member={member} />
-      <div className="flex-1 flex flex-col">
-        <header className="flex items-center justify-end gap-4 px-8 py-4">
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="flex items-center justify-end gap-4 px-4 md:px-8 py-4 pl-16 md:pl-8">
           <NotificationBell
             notifications={notifications.map((n) => ({
               id: n.id,
@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             }))}
           />
         </header>
-        <main className="flex-1 px-8 pb-10">{children}</main>
+        <main className="flex-1 px-4 md:px-8 pb-10 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );
