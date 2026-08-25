@@ -76,11 +76,11 @@ export default async function TeamQueuePage({
             })}
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-3 overflow-x-auto">
+        <div className="flex gap-3 overflow-x-auto pb-2">
           {STATUS_COLUMNS.map((status) => {
             const colTasks = tasks.filter((t) => t.status === status);
             return (
-              <div key={status} className="flex flex-col gap-2 min-w-[180px]">
+              <div key={status} className="flex flex-col gap-2 w-[180px] shrink-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">
                   {STATUS_LABEL[status]} <span className="opacity-60">({colTasks.length})</span>
                 </p>

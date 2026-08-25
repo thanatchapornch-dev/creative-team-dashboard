@@ -66,7 +66,7 @@ export default async function ReportsPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Task Status Breakdown</h2>
-        <div className="grid grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
           {taskStats.map((s) => (
             <div key={s.status} className="card p-3 text-center">
               <p className="text-xs text-[var(--muted)]">{s.status.replace("_", " ")}</p>
