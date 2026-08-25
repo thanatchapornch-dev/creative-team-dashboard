@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { sortLeaderFirst } from "@/lib/members";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage({
@@ -11,8 +12,7 @@ export default async function LoginPage({
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, nickname: true, position: true, profilePictureUrl: true, role: true },
   });
-  // Team leader/admin shows first, consistent with the dashboard's ordering.
-  const members = [...membersRaw].sort((a, b) => (a.role !== "MEMBER" ? 0 : 1) - (b.role !== "MEMBER" ? 0 : 1));
+  const members = sortLeaderFirst(membersRaw);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-6" style={{ background: "var(--navy)" }}>

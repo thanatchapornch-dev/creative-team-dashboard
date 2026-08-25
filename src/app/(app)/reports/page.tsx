@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { computeTeamLoad, CAPACITY_EMOJI } from "@/lib/capacity";
+import { sortLeaderFirst } from "@/lib/members";
 import { CapacityBar } from "@/components/Pills";
 
 export default async function ReportsPage() {
@@ -24,7 +25,7 @@ export default async function ReportsPage() {
   const avgNotice =
     leaves.length > 0 ? Math.round(leaves.reduce((s, l) => s + l.advanceNoticeDays, 0) / leaves.length) : 0;
 
-  const members = await prisma.member.findMany({ orderBy: { createdAt: "asc" } });
+  const members = sortLeaderFirst(await prisma.member.findMany({ orderBy: { createdAt: "asc" } }));
   const loadByMember = new Map(load.map((l) => [l.memberId, l]));
 
   return (

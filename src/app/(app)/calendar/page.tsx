@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentMember } from "@/lib/auth";
+import { sortLeaderFirst } from "@/lib/members";
 import { CalendarFilters } from "@/components/CalendarFilters";
 
 const TYPE_COLOR: Record<string, string> = {
@@ -26,7 +27,7 @@ export default async function CalendarPage({
   const monthEnd = new Date(year, monthNum, 0, 23, 59, 59, 999);
   const daysInMonth = monthEnd.getDate();
 
-  const members = await prisma.member.findMany({ orderBy: { createdAt: "asc" } });
+  const members = sortLeaderFirst(await prisma.member.findMany({ orderBy: { createdAt: "asc" } }));
 
   const where: Record<string, unknown> = {
     status: "APPROVED",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getMembersOnLeaveToday, getTeamSummary, getTodaySummary, effectiveStatusToday } from "@/lib/dashboard";
+import { sortLeaderFirst } from "@/lib/members";
 import { Avatar } from "@/components/Avatar";
 import { StatusTodayPill, PriorityPill, TaskBadgePill } from "@/components/Pills";
 import { deriveTaskBadge } from "@/lib/task-status";
@@ -23,12 +24,7 @@ export default async function DashboardPage() {
     getTeamSummary(now),
     getMembersOnLeaveToday(now),
   ]);
-  // Team leader/admin shows first on the home page, regardless of when they were added.
-  const members = [...membersRaw].sort((a, b) => {
-    const aLead = a.role !== "MEMBER" ? 0 : 1;
-    const bLead = b.role !== "MEMBER" ? 0 : 1;
-    return aLead - bLead;
-  });
+  const members = sortLeaderFirst(membersRaw);
   const onLeaveIds = new Set(onLeave.map((l) => l.employeeId));
 
   const dueSoonTasks = await prisma.task.findMany({
