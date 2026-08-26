@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkOpenChatReminder } from "@/lib/automation";
 
 /**
  * Polled by the Apps Script relay (time-driven trigger) since this org's
@@ -13,6 +14,8 @@ export async function GET(request: NextRequest) {
   if (!secret || secret !== process.env.EMAIL_QUEUE_SECRET) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  await checkOpenChatReminder();
 
   const queued = await prisma.notificationLog.findMany({
     where: { channel: "EMAIL", status: "QUEUED" },

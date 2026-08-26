@@ -93,6 +93,7 @@ model Member {
   pinHash            String
   statusToday        StatusToday @default(AVAILABLE)
   dailyCapacityHours Float    @default(8)
+  canManageOpenChat  Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -104,6 +105,7 @@ model Member {
   overtimeEntries  OvertimeEntry[] @relation("OvertimeEmployee")
   approvedOvertime OvertimeEntry[] @relation("OvertimeApprover")
   notifications    NotificationLog[] @relation("Recipient")
+  openChatCounts   OpenChatCount[]   @relation("OpenChatRecorder")
 }
 
 model Task {
@@ -196,4 +198,42 @@ model Settings {
   taskReminderDaysBefore Int      @default(2)
   themeColors            String   @default("{\"navy\":\"#0F1B33\",\"offwhite\":\"#F7F5F0\",\"orange\":\"#FF7A33\",\"lime\":\"#B6E64B\"}")
   updatedAt              DateTime @updatedAt
+}
+
+model Store {
+  id             String   @id @default(cuid())
+  branchCode     String   @default("")
+  storeCode      String   @default("")
+  name           String
+  nameEn         String   @default("")
+  subdistrict    String   @default("")
+  district       String   @default("")
+  province       String   @default("")
+  address        String   @default("")
+  googleMapsUrl  String   @default("")
+  warehouse      String   @default("")
+  buddhistRatio  Float    @default(0)
+  muslimRatio    Float    @default(0)
+  burmeseRatio   Float    @default(0)
+  cambodianRatio Float    @default(0)
+  zoning         String   @default("")
+  grandOpening   String   @default("")
+  status         String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  openChatCounts OpenChatCount[]
+}
+
+model OpenChatCount {
+  id            String   @id @default(cuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id])
+  weekOf        DateTime
+  memberCount   Int
+  recordedById  String
+  recordedBy    Member   @relation("OpenChatRecorder", fields: [recordedById], references: [id])
+  recordedAt    DateTime @default(now())
+
+  @@unique([storeId, weekOf])
 }

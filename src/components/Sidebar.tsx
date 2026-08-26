@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { href: "/calendar", label: "Calendar", icon: "📅" },
   { href: "/leave", label: "Leave", icon: "🏖️" },
   { href: "/approval", label: "Approval", icon: "📋", roles: ["LEADER", "ADMIN"] },
+  { href: "/openchat", label: "OpenChat", icon: "💬" },
   { href: "/reports", label: "Reports", icon: "📊" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];

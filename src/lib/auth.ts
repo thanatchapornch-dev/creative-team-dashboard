@@ -71,3 +71,10 @@ export async function requireRole(roles: Array<"MEMBER" | "LEADER" | "ADMIN">) {
   if (!roles.includes(member.role)) throw new Error("FORBIDDEN");
   return member;
 }
+
+export async function requireOpenChatAccess() {
+  const member = await requireMember();
+  const allowed = member.role === "LEADER" || member.role === "ADMIN" || member.canManageOpenChat;
+  if (!allowed) throw new Error("FORBIDDEN");
+  return member;
+}

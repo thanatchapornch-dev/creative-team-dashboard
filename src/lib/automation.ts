@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { notify } from "./notify";
 import { deriveTaskBadge } from "./task-status";
+import { bangkokDayOfWeek, bangkokStartOfDay, bangkokWeekStart } from "./date-only";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -68,5 +69,42 @@ export async function runDeadlineSweep(now: Date = new Date()) {
         sendEmail: true,
       });
     }
+  }
+}
+
+/**
+ * Reminds whoever can manage OpenChat counts every Friday and Monday
+ * (Bangkok-local calendar day, not server-UTC day — see date-only.ts) if
+ * this week's counts haven't been submitted yet. Called from the
+ * email-queue poll route rather than page-load sweeps, since it needs to
+ * fire even on days nobody opens the dashboard.
+ */
+export async function checkOpenChatReminder(now: Date = new Date()) {
+  const dow = bangkokDayOfWeek(now);
+  const isFridayOrMonday = dow === 5 || dow === 1;
+  if (!isFridayOrMonday) return;
+
+  const weekOf = bangkokWeekStart(now);
+  const submittedThisWeek = await prisma.openChatCount.findFirst({ where: { weekOf } });
+  if (submittedThisWeek) return;
+
+  const todayStart = bangkokStartOfDay(now);
+  const alreadyRemindedToday = await prisma.notificationLog.findFirst({
+    where: { type: "OPENCHAT_REMINDER", createdAt: { gte: todayStart } },
+  });
+  if (alreadyRemindedToday) return;
+
+  const recipients = await prisma.member.findMany({
+    where: { OR: [{ role: { in: ["LEADER", "ADMIN"] } }, { canManageOpenChat: true }] },
+  });
+
+  for (const recipient of recipients) {
+    await notify({
+      recipientId: recipient.id,
+      type: "OPENCHAT_REMINDER",
+      title: "💬 อย่าลืมกรอกจำนวนสมาชิก OpenChat ประจำสัปดาห์",
+      body: "ยังไม่มีการกรอกจำนวนสมาชิก OpenChat ของสัปดาห์นี้ — เข้าไปกรอกได้ที่หน้า OpenChat ในแดชบอร์ด",
+      sendEmail: true,
+    });
   }
 }
