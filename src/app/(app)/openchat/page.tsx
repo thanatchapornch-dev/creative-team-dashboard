@@ -16,9 +16,9 @@ export default async function OpenChatPage() {
       where: { status: "Active store" },
       orderBy: [{ province: "asc" }, { name: "asc" }],
     }),
-    prisma.openChatCount.findMany({ where: { weekOf } }),
+    prisma.openChatCount.findMany({ where: { weekOf, store: { status: "Active store" } } }),
     prisma.openChatCount.aggregate({
-      where: { weekOf: new Date(weekOf.getTime() - 7 * 24 * 60 * 60 * 1000) },
+      where: { weekOf: new Date(weekOf.getTime() - 7 * 24 * 60 * 60 * 1000), store: { status: "Active store" } },
       _sum: { memberCount: true },
     }),
   ]);
