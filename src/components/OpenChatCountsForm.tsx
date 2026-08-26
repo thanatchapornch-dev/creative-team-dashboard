@@ -16,7 +16,7 @@ type StoreRow = {
 };
 
 function parseLatLng(url: string): { lat: string; lng: string } | null {
-  const match = url.match(/q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  const match = url.match(/q=(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
   return match ? { lat: match[1], lng: match[2] } : null;
 }
 
