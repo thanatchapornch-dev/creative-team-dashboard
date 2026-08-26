@@ -11,15 +11,18 @@ export default async function LeavePage() {
   const member = await getCurrentMember();
   if (!member) return null;
 
+  const isAdmin = member.role === "LEADER" || member.role === "ADMIN";
   const yearStart = new Date(new Date().getFullYear(), 0, 1);
   const yearEnd = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999);
 
   const [myLeaves, allApproved, membersRaw] = await Promise.all([
     prisma.leaveRequest.findMany({ where: { employeeId: member.id }, orderBy: { requestedAt: "desc" } }),
-    prisma.leaveRequest.findMany({
-      where: { status: "APPROVED", startDate: { gte: yearStart, lte: yearEnd } },
-      include: { employee: true },
-    }),
+    isAdmin
+      ? prisma.leaveRequest.findMany({
+          where: { status: "APPROVED", startDate: { gte: yearStart, lte: yearEnd } },
+          include: { employee: true },
+        })
+      : Promise.resolve([]),
     prisma.member.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
   const members = sortLeaderFirst(membersRaw);
@@ -69,29 +72,31 @@ export default async function LeavePage() {
         <LogLeaveForTeamForm members={members.filter((m) => m.id !== member.id).map((m) => ({ id: m.id, nickname: m.nickname }))} />
       )}
 
-      <div className="card p-5">
-        <h2 className="font-bold mb-3">Team Leave Summary ({new Date().getFullYear()})</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase text-[var(--muted)]">
-                <th className="py-2">Member</th>
-                {LEAVE_TYPES.map((t) => <th key={t} className="py-2">{t}</th>)}
-                <th className="py-2">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.map((s) => (
-                <tr key={s.member.id} className="border-t" style={{ borderColor: "var(--line)" }}>
-                  <td className="py-2 font-medium">{s.member.nickname}</td>
-                  {LEAVE_TYPES.map((t) => <td key={t} className="py-2">{s.totals[t]}</td>)}
-                  <td className="py-2 font-semibold">{s.total}</td>
+      {isAdmin && (
+        <div className="card p-5">
+          <h2 className="font-bold mb-3">Team Leave Summary ({new Date().getFullYear()})</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-[var(--muted)]">
+                  <th className="py-2">Member</th>
+                  {LEAVE_TYPES.map((t) => <th key={t} className="py-2">{t}</th>)}
+                  <th className="py-2">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {summary.map((s) => (
+                  <tr key={s.member.id} className="border-t" style={{ borderColor: "var(--line)" }}>
+                    <td className="py-2 font-medium">{s.member.nickname}</td>
+                    {LEAVE_TYPES.map((t) => <td key={t} className="py-2">{s.totals[t]}</td>)}
+                    <td className="py-2 font-semibold">{s.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
