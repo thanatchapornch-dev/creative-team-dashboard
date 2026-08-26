@@ -5,6 +5,7 @@ import { sortLeaderFirst } from "@/lib/members";
 import { ProfileSettingsForm } from "@/components/ProfileSettingsForm";
 import { CompanySettingsForm } from "@/components/CompanySettingsForm";
 import { MembersAdminSection } from "@/components/MembersAdminSection";
+import { StoreUploadForm } from "@/components/StoreUploadForm";
 
 export default async function SettingsPage() {
   const member = await getCurrentMember();
@@ -44,6 +45,7 @@ export default async function SettingsPage() {
               profilePictureUrl: m.profilePictureUrl,
             }))}
           />
+          <StoreUploadForm />
         </>
       )}
     </div>

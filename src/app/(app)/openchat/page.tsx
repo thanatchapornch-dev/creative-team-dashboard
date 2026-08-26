@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMember } from "@/lib/auth";
 import { bangkokWeekStart } from "@/lib/date-only";
 import { OpenChatCountsForm } from "@/components/OpenChatCountsForm";
+import { OpenChatUploadForm } from "@/components/OpenChatUploadForm";
 
 function parseLatLng(url: string): { lat: string; lng: string } | null {
   const match = url.match(/q=(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
@@ -69,7 +70,10 @@ export default async function OpenChatPage() {
       </div>
 
       {canEdit ? (
-        <OpenChatCountsForm stores={rows} weekLabel={weekLabel} />
+        <>
+          <OpenChatUploadForm />
+          <OpenChatCountsForm stores={rows} weekLabel={weekLabel} />
+        </>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">

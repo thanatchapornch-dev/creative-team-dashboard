@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireMember, requireRole, hashPin } from "@/lib/auth";
 import { updateSettings, type ThemeColors } from "@/lib/settings";
+import { parseStoreUpload, type StoreUploadPreview } from "@/lib/store-import";
 
 export async function updateProfileAction(input: {
   nickname: string;
@@ -69,4 +70,35 @@ export async function changeMyPinAction(currentPin: string, newPin: string) {
   if (!ok) throw new Error("PIN ปัจจุบันไม่ถูกต้อง");
   const pinHash = await hashPin(newPin);
   await prisma.member.update({ where: { id: member.id }, data: { pinHash } });
+}
+
+export async function previewStoreUploadAction(formData: FormData): Promise<StoreUploadPreview> {
+  await requireRole(["LEADER", "ADMIN"]);
+  const file = formData.get("file");
+  if (!(file instanceof File)) throw new Error("NO_FILE");
+  const buffer = await file.arrayBuffer();
+  return parseStoreUpload(buffer);
+}
+
+export async function commitStoreUploadAction(preview: StoreUploadPreview) {
+  await requireRole(["LEADER", "ADMIN"]);
+
+  let created = 0;
+  let updated = 0;
+
+  for (const row of preview.rows) {
+    if (row.kind === "unchanged") continue;
+    if (row.kind === "new") {
+      await prisma.store.create({
+        data: { branchCode: row.branchCode, storeCode: row.storeCode, ...row.fields },
+      });
+      created++;
+    } else if (row.storeId) {
+      await prisma.store.update({ where: { id: row.storeId }, data: row.fields });
+      updated++;
+    }
+  }
+
+  revalidatePath("/", "layout");
+  return { created, updated };
 }

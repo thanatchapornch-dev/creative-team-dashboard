@@ -57,3 +57,16 @@ export function bangkokStartOfDay(now: Date = new Date()): Date {
   const utcMidnightOfBangkokDate = Date.UTC(bkk.getUTCFullYear(), bkk.getUTCMonth(), bkk.getUTCDate());
   return new Date(utcMidnightOfBangkokDate - 7 * 60 * 60 * 1000);
 }
+
+/**
+ * UTC-midnight of the Monday starting the week containing a known (y, m, d)
+ * calendar date — e.g. from an uploaded spreadsheet's date column. Day-of-week
+ * for a fixed calendar date is timezone-independent, so this needs no
+ * Bangkok-offset conversion (unlike bangkokWeekStart, which starts from an
+ * instant and must first figure out what Bangkok-local date that instant is).
+ */
+export function weekStartForCalendarDate(y: number, m: number, d: number): Date {
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const diffToMonday = dow === 0 ? 6 : dow - 1;
+  return new Date(Date.UTC(y, m - 1, d - diffToMonday));
+}
