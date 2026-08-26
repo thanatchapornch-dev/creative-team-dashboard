@@ -8,9 +8,17 @@ type StoreRow = {
   id: string;
   name: string;
   province: string;
+  branchCode: string;
   storeCode: string;
+  googleMapsUrl: string;
+  grandOpening: string;
   currentCount: number | null;
 };
+
+function parseLatLng(url: string): { lat: string; lng: string } | null {
+  const match = url.match(/q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  return match ? { lat: match[1], lng: match[2] } : null;
+}
 
 export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; weekLabel: string }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -66,31 +74,51 @@ export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; 
             <tr className="text-left text-xs uppercase text-[var(--muted)]">
               <th className="py-2 px-3">สาขา</th>
               <th className="py-2 px-3">จังหวัด</th>
+              <th className="py-2 px-3">เปิดร้าน</th>
+              <th className="py-2 px-3">แผนที่</th>
               <th className="py-2 px-3">สัปดาห์นี้ (เดิม)</th>
               <th className="py-2 px-3">กรอกใหม่</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((s) => (
-              <tr key={s.id} className="border-t" style={{ borderColor: "var(--line)" }}>
-                <td className="py-2 px-3">{s.name}</td>
-                <td className="py-2 px-3 text-[var(--muted)]">{s.province}</td>
-                <td className="py-2 px-3 text-[var(--muted)]">{s.currentCount ?? "—"}</td>
-                <td className="py-2 px-3">
-                  <input
-                    type="number"
-                    min="0"
-                    className="input w-28"
-                    value={values[s.id] ?? ""}
-                    onChange={(e) => setValues((v) => ({ ...v, [s.id]: e.target.value }))}
-                    placeholder={s.currentCount != null ? String(s.currentCount) : "-"}
-                  />
-                </td>
-              </tr>
-            ))}
+            {filtered.map((s) => {
+              const coords = parseLatLng(s.googleMapsUrl);
+              return (
+                <tr key={s.id} className="border-t" style={{ borderColor: "var(--line)" }}>
+                  <td className="py-2 px-3">
+                    {s.name}
+                    <div className="text-xs text-[var(--muted)]">
+                      {s.branchCode} · {s.storeCode}
+                    </div>
+                  </td>
+                  <td className="py-2 px-3 text-[var(--muted)]">{s.province}</td>
+                  <td className="py-2 px-3 text-[var(--muted)]">{s.grandOpening || "—"}</td>
+                  <td className="py-2 px-3">
+                    {s.googleMapsUrl ? (
+                      <a href={s.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--orange)" }}>
+                        📍 {coords ? `${coords.lat}, ${coords.lng}` : "เปิดแผนที่"}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="py-2 px-3 text-[var(--muted)]">{s.currentCount ?? "—"}</td>
+                  <td className="py-2 px-3">
+                    <input
+                      type="number"
+                      min="0"
+                      className="input w-28"
+                      value={values[s.id] ?? ""}
+                      onChange={(e) => setValues((v) => ({ ...v, [s.id]: e.target.value }))}
+                      placeholder={s.currentCount != null ? String(s.currentCount) : "-"}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-[var(--muted)]">
+                <td colSpan={6} className="py-6 text-center text-[var(--muted)]">
                   ไม่พบสาขาที่ค้นหา
                 </td>
               </tr>

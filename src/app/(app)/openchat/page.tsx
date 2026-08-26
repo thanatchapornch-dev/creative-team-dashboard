@@ -3,6 +3,11 @@ import { getCurrentMember } from "@/lib/auth";
 import { bangkokWeekStart } from "@/lib/date-only";
 import { OpenChatCountsForm } from "@/components/OpenChatCountsForm";
 
+function parseLatLng(url: string): { lat: string; lng: string } | null {
+  const match = url.match(/q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  return match ? { lat: match[1], lng: match[2] } : null;
+}
+
 export default async function OpenChatPage() {
   const member = await getCurrentMember();
   if (!member) return null;
@@ -31,7 +36,10 @@ export default async function OpenChatPage() {
     id: s.id,
     name: s.name,
     province: s.province,
+    branchCode: s.branchCode,
     storeCode: s.storeCode,
+    googleMapsUrl: s.googleMapsUrl,
+    grandOpening: s.grandOpening,
     currentCount: countByStore.get(s.id) ?? null,
   }));
 
@@ -69,17 +77,37 @@ export default async function OpenChatPage() {
               <tr className="text-left text-xs uppercase text-[var(--muted)]">
                 <th className="py-2 px-3">สาขา</th>
                 <th className="py-2 px-3">จังหวัด</th>
+                <th className="py-2 px-3">เปิดร้าน</th>
+                <th className="py-2 px-3">แผนที่</th>
                 <th className="py-2 px-3">สมาชิกสัปดาห์นี้</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((s) => (
-                <tr key={s.id} className="border-t" style={{ borderColor: "var(--line)" }}>
-                  <td className="py-2 px-3">{s.name}</td>
-                  <td className="py-2 px-3 text-[var(--muted)]">{s.province}</td>
-                  <td className="py-2 px-3">{s.currentCount ?? "—"}</td>
-                </tr>
-              ))}
+              {rows.map((s) => {
+                const coords = parseLatLng(s.googleMapsUrl);
+                return (
+                  <tr key={s.id} className="border-t" style={{ borderColor: "var(--line)" }}>
+                    <td className="py-2 px-3">
+                      {s.name}
+                      <div className="text-xs text-[var(--muted)]">
+                        {s.branchCode} · {s.storeCode}
+                      </div>
+                    </td>
+                    <td className="py-2 px-3 text-[var(--muted)]">{s.province}</td>
+                    <td className="py-2 px-3 text-[var(--muted)]">{s.grandOpening || "—"}</td>
+                    <td className="py-2 px-3">
+                      {s.googleMapsUrl ? (
+                        <a href={s.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--orange)" }}>
+                          📍 {coords ? `${coords.lat}, ${coords.lng}` : "เปิดแผนที่"}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="py-2 px-3">{s.currentCount ?? "—"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <p className="text-xs text-[var(--muted)] p-3">เฉพาะ DN และ KIMJI แก้ไขข้อมูลได้</p>
