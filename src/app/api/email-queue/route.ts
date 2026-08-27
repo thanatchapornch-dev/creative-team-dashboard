@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkOpenChatReminder } from "@/lib/automation";
+import { checkOpenChatReminder, checkPinTimelineReminder } from "@/lib/automation";
 
 /**
  * Polled by the Apps Script relay (time-driven trigger) since this org's
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   await checkOpenChatReminder();
+  await checkPinTimelineReminder();
 
   const queued = await prisma.notificationLog.findMany({
     where: { channel: "EMAIL", status: "QUEUED" },

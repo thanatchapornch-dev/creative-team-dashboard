@@ -108,3 +108,55 @@ export async function checkOpenChatReminder(now: Date = new Date()) {
     });
   }
 }
+
+/**
+ * Weekly (Monday, Bangkok-local) nudge for whoever owns open "ปักหมุด Google
+ * Maps" tasks — added after DN flagged concern that WITCH/TOON tend to let
+ * these slip since the normal due-date sweep only warns a couple of days
+ * before deadline, too late to matter for a discipline problem. Sends to
+ * every owner with open Google Maps tasks, not just WITCH/TOON by name, so
+ * it keeps working if task ownership changes later.
+ */
+export async function checkPinTimelineReminder(now: Date = new Date()) {
+  const dow = bangkokDayOfWeek(now);
+  if (dow !== 1) return;
+
+  const todayStart = bangkokStartOfDay(now);
+  const alreadyRemindedToday = await prisma.notificationLog.findFirst({
+    where: { type: "PIN_TIMELINE_REMINDER", createdAt: { gte: todayStart } },
+  });
+  if (alreadyRemindedToday) return;
+
+  const openTasks = await prisma.task.findMany({
+    where: { status: { notIn: ["DONE"] }, project: { contains: "Google Maps" } },
+    orderBy: { dueDate: "asc" },
+  });
+  if (openTasks.length === 0) return;
+
+  const byOwner = new Map<string, typeof openTasks>();
+  for (const task of openTasks) {
+    if (!byOwner.has(task.ownerId)) byOwner.set(task.ownerId, []);
+    byOwner.get(task.ownerId)!.push(task);
+  }
+
+  for (const [ownerId, tasks] of byOwner) {
+    const pinTasks = tasks.filter((t) => t.name.includes("ปักหมุด"));
+    if (pinTasks.length === 0) continue;
+
+    const owner = await prisma.member.findUnique({ where: { id: ownerId } });
+    if (!owner) continue;
+
+    const next3 = pinTasks
+      .slice(0, 3)
+      .map((t) => `- ${t.name.replace("📍 ปักหมุด Google Maps: ", "")} (กำหนด ${t.dueDate.toISOString().slice(0, 10)})`)
+      .join("\n");
+
+    await notify({
+      recipientId: ownerId,
+      type: "PIN_TIMELINE_REMINDER",
+      title: "⏰ เตือนไทม์ไลน์ประจำสัปดาห์: งานปักหมุด Google Maps สาขาเปิดใหม่",
+      body: `${owner.nickname} มีงาน "ปักหมุด Google Maps" ที่ยังไม่เริ่มทำทั้งหมด ${pinTasks.length} งาน (รวมงานที่เกี่ยวข้องในโปรเจกต์นี้ทั้งหมด ${tasks.length} งาน)\n\nงานที่ใกล้ครบกำหนดที่สุด:\n${next3}\n\nรบกวนทยอยทำตามกำหนดเวลาเพื่อไม่ให้กระทบไทม์ไลน์เปิดร้านนะคะ เช็กรายการทั้งหมดได้ที่ Team Queue ในแดชบอร์ด`,
+      sendEmail: true,
+    });
+  }
+}
