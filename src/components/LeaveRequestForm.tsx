@@ -12,10 +12,13 @@ const LEAVE_TYPES = [
   { value: "URGENT", label: "🚨 Urgent Leave" },
 ];
 
+const COMMON_REASONS = ["ท้องเสีย", "เป็นไข้", "ปวดหัว", "ไข้หวัด", "ปวดท้อง", "ธุระส่วนตัว", "พาครอบครัวไปหาหมอ"];
+
 export function LeaveRequestForm() {
   const [pending, startTransition] = useTransition();
   const [warning, setWarning] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [reason, setReason] = useState("");
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -34,6 +37,7 @@ export function LeaveRequestForm() {
           });
           setWarning(result.warning);
           setDone(true);
+          setReason("");
           router.refresh();
         });
       }}
@@ -54,7 +58,28 @@ export function LeaveRequestForm() {
           <input name="endDate" type="date" defaultValue={today} required className="input" />
         </label>
       </div>
-      <textarea name="reason" placeholder="Reason" required rows={2} className="input" />
+      <div className="flex flex-wrap gap-1.5">
+        {COMMON_REASONS.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setReason(r)}
+            className="rounded-full px-2.5 py-1 text-xs"
+            style={{ background: "var(--line)", color: "var(--muted)" }}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+      <textarea
+        name="reason"
+        placeholder="Reason"
+        required
+        rows={2}
+        className="input"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+      />
 
       {warning && (
         <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fff4e5", color: "#8a5a00" }}>

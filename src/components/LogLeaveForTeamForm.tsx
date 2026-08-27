@@ -12,9 +12,12 @@ const LEAVE_TYPES = [
   { value: "URGENT", label: "🚨 Urgent Leave" },
 ];
 
+const COMMON_REASONS = ["ท้องเสีย", "เป็นไข้", "ปวดหัว", "ไข้หวัด", "ปวดท้อง", "ธุระส่วนตัว", "พาครอบครัวไปหาหมอ"];
+
 export function LogLeaveForTeamForm({ members }: { members: { id: string; nickname: string }[] }) {
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
+  const [note, setNote] = useState("");
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -34,6 +37,7 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
             note: String(fd.get("note") || ""),
           });
           setDone(true);
+          setNote("");
           router.refresh();
         });
       }}
@@ -69,7 +73,26 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
         </label>
       </div>
 
-      <input name="note" placeholder="โน้ต (ถ้ามี)" className="input" />
+      <div className="flex flex-wrap gap-1.5">
+        {COMMON_REASONS.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setNote(r)}
+            className="rounded-full px-2.5 py-1 text-xs"
+            style={{ background: "var(--line)", color: "var(--muted)" }}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+      <input
+        name="note"
+        placeholder="โน้ต (ถ้ามี)"
+        className="input"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
 
       {done && (
         <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#eefbe0", color: "#3c6b0f" }}>
