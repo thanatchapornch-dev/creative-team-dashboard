@@ -1,5 +1,7 @@
 import { prisma } from "./prisma";
 
+const DASHBOARD_URL = "https://creative-team-dashboard-azure.vercel.app";
+
 export type NotifyInput = {
   recipientId: string;
   type: string;
@@ -43,7 +45,7 @@ export async function notify(input: NotifyInput) {
       recipientId: input.recipientId,
       type: input.type,
       title: input.title,
-      body: input.body,
+      body: `${input.body}\n\nเข้าดูรายละเอียดที่แดชบอร์ด: ${DASHBOARD_URL}`,
       relatedType: input.relatedType ?? "",
       relatedId: input.relatedId ?? "",
       channel: "EMAIL",
