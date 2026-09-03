@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { logApprovedLeaveAction } from "@/app/(app)/leave/actions";
+import { parseEuniteText } from "@/lib/eunite-parse";
 
 const LEAVE_TYPES = [
   { value: "ANNUAL", label: "ลาพักร้อน" },
@@ -14,12 +15,47 @@ const LEAVE_TYPES = [
 
 const COMMON_REASONS = ["ท้องเสีย", "เป็นไข้", "ปวดหัว", "ไข้หวัด", "ปวดท้อง", "ธุระส่วนตัว", "พาครอบครัวไปหาหมอ"];
 
-export function LogLeaveForTeamForm({ members }: { members: { id: string; nickname: string }[] }) {
+// EUNITE shows Thai names, which aren't otherwise stored anywhere in this app.
+// Add more here as they're confirmed — matching just falls back to manual
+// selection for anyone not listed yet.
+const EUNITE_THAI_ALIASES: Record<string, string[]> = {
+  JARUJU: ["จุฑารัตน์ สุวรรณอ่อน"],
+  WITCH: ["วิชญ์ มีนรักษ์เรืองเดช"],
+};
+
+type Member = { id: string; nickname: string; name: string };
+
+export function LogLeaveForTeamForm({ members }: { members: Member[] }) {
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
-  const [note, setNote] = useState("");
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
+
+  const [pasteText, setPasteText] = useState("");
+  const [parsedNote, setParsedNote] = useState<string | null>(null);
+  const [employeeId, setEmployeeId] = useState("");
+  const [leaveType, setLeaveType] = useState("ANNUAL");
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [note, setNote] = useState("");
+
+  function handleParse() {
+    if (!pasteText.trim()) return;
+    const membersWithAliases = members.map((m) => ({ ...m, aliases: EUNITE_THAI_ALIASES[m.nickname] }));
+    const result = parseEuniteText(pasteText, membersWithAliases);
+    if (result.matchedMemberId) setEmployeeId(result.matchedMemberId);
+    setLeaveType(result.leaveType);
+    if (result.date) {
+      setStartDate(result.date);
+      setEndDate(result.date);
+    }
+    setNote(result.reason);
+    setParsedNote(
+      result.matchedMemberId
+        ? "แกะข้อมูลแล้ว — ตรวจสอบก่อนบันทึก (โดยเฉพาะช่วงวันที่ ถ้าเหตุผลระบุหลายวัน)"
+        : "แกะข้อมูลแล้วแต่หาชื่อสมาชิกไม่เจอ — กรุณาเลือกเอง"
+    );
+  }
 
   return (
     <form
@@ -27,17 +63,13 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
       style={{ borderColor: "var(--lime)" }}
       onSubmit={(e) => {
         e.preventDefault();
-        const fd = new FormData(e.currentTarget);
         startTransition(async () => {
-          await logApprovedLeaveAction({
-            employeeId: String(fd.get("employeeId")),
-            leaveType: String(fd.get("leaveType")),
-            startDate: String(fd.get("startDate")),
-            endDate: String(fd.get("endDate")),
-            note: String(fd.get("note") || ""),
-          });
+          await logApprovedLeaveAction({ employeeId, leaveType, startDate, endDate, note });
           setDone(true);
+          setPasteText("");
+          setParsedNote(null);
           setNote("");
+          setEmployeeId("");
           router.refresh();
         });
       }}
@@ -49,14 +81,36 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
         </p>
       </div>
 
-      <select name="employeeId" required className="input" defaultValue="">
+      <div className="flex flex-col gap-1.5 rounded-lg p-3" style={{ background: "var(--paper, #f7f5f0)", border: "1px dashed var(--line)" }}>
+        <label className="text-xs font-medium text-[var(--muted)]">
+          วางข้อความจาก EUNITE (คัดลอกทั้งแถวมาวางได้เลย)
+        </label>
+        <textarea
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          rows={2}
+          placeholder="เช่น: ลาพักร้อน วันที่ 21/09/2569 เหตุผล ไปต่างจังหวัด 19-21 กย.   วิชญ์ มีนรักษ์เรืองเดช"
+          className="input"
+        />
+        <button
+          type="button"
+          onClick={handleParse}
+          className="rounded-full px-3 py-1.5 text-xs font-semibold self-start"
+          style={{ background: "var(--navy, #0F1B33)", color: "white" }}
+        >
+          แกะข้อมูลใส่ฟอร์ม
+        </button>
+        {parsedNote && <p className="text-xs" style={{ color: "var(--muted)" }}>{parsedNote}</p>}
+      </div>
+
+      <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required className="input">
         <option value="" disabled>เลือกสมาชิก</option>
         {members.map((m) => (
           <option key={m.id} value={m.id}>{m.nickname}</option>
         ))}
       </select>
 
-      <select name="leaveType" required className="input" defaultValue="ANNUAL">
+      <select value={leaveType} onChange={(e) => setLeaveType(e.target.value)} required className="input">
         {LEAVE_TYPES.map((t) => (
           <option key={t.value} value={t.value}>{t.label}</option>
         ))}
@@ -65,11 +119,11 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="text-xs text-[var(--muted)] flex flex-col gap-1">
           Start Date
-          <input name="startDate" type="date" defaultValue={today} required className="input" />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required className="input" />
         </label>
         <label className="text-xs text-[var(--muted)] flex flex-col gap-1">
           End Date
-          <input name="endDate" type="date" defaultValue={today} required className="input" />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required className="input" />
         </label>
       </div>
 
@@ -87,7 +141,6 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
         ))}
       </div>
       <input
-        name="note"
         placeholder="โน้ต (ถ้ามี)"
         className="input"
         value={note}
@@ -102,9 +155,9 @@ export function LogLeaveForTeamForm({ members }: { members: { id: string; nickna
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !employeeId}
         className="rounded-full px-4 py-2 text-sm font-semibold self-start"
-        style={{ background: "var(--lime)", opacity: pending ? 0.6 : 1 }}
+        style={{ background: "var(--lime)", opacity: pending || !employeeId ? 0.6 : 1 }}
       >
         Log Leave
       </button>

@@ -69,7 +69,9 @@ export default async function LeavePage() {
       </div>
 
       {(member.role === "LEADER" || member.role === "ADMIN") && (
-        <LogLeaveForTeamForm members={members.filter((m) => m.id !== member.id).map((m) => ({ id: m.id, nickname: m.nickname }))} />
+        <LogLeaveForTeamForm
+          members={members.filter((m) => m.id !== member.id).map((m) => ({ id: m.id, nickname: m.nickname, name: m.name }))}
+        />
       )}
 
       {isAdmin && (
