@@ -27,7 +27,9 @@ export default async function TeamQueuePage({
   const member = await getCurrentMember();
   if (!member) return null;
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = {
+    OR: [{ isPrivate: false }, { ownerId: member.id }],
+  };
   if (params.member) where.ownerId = params.member;
   if (params.priority) where.priority = params.priority;
   if (params.project) where.project = params.project;
@@ -35,7 +37,11 @@ export default async function TeamQueuePage({
   const [tasks, members, allProjects] = await Promise.all([
     prisma.task.findMany({ where, include: { owner: true }, orderBy: { dueDate: "asc" } }),
     prisma.member.findMany({ select: { id: true, nickname: true }, orderBy: { createdAt: "asc" } }),
-    prisma.task.findMany({ select: { project: true }, distinct: ["project"] }),
+    prisma.task.findMany({
+      where: { OR: [{ isPrivate: false }, { ownerId: member.id }] },
+      select: { project: true },
+      distinct: ["project"],
+    }),
   ]);
 
   const now = new Date();
@@ -88,7 +94,7 @@ export default async function TeamQueuePage({
                   {colTasks.map((t) => (
                     <div key={t.id} className="card p-3 flex flex-col gap-2 text-xs">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium">{t.name}</p>
+                        <p className="font-medium">{t.isPrivate ? "🔒 " : ""}{t.name}</p>
                         <TaskEditModal
                           task={{
                             id: t.id,
@@ -103,6 +109,7 @@ export default async function TeamQueuePage({
                             estimatedHours: t.estimatedHours,
                             notes: t.notes,
                             attachmentUrl: t.attachmentUrl,
+                            isPrivate: t.isPrivate,
                           }}
                           members={members}
                         />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getCurrentMember } from "@/lib/auth";
 import { getMembersOnLeaveToday, getTeamSummary, getTodaySummary, effectiveStatusToday } from "@/lib/dashboard";
 import { sortLeaderFirst } from "@/lib/members";
 import { Avatar } from "@/components/Avatar";
@@ -18,6 +19,7 @@ function SummaryCard({ label, value, tone }: { label: string; value: string | nu
 
 export default async function DashboardPage() {
   const now = new Date();
+  const viewer = await getCurrentMember();
   const [membersRaw, today, team, onLeave] = await Promise.all([
     prisma.member.findMany({ orderBy: { createdAt: "asc" } }),
     getTodaySummary(now),
@@ -28,7 +30,10 @@ export default async function DashboardPage() {
   const onLeaveIds = new Set(onLeave.map((l) => l.employeeId));
 
   const dueSoonTasks = await prisma.task.findMany({
-    where: { status: { notIn: ["DONE"] } },
+    where: {
+      status: { notIn: ["DONE"] },
+      OR: [{ isPrivate: false }, { ownerId: viewer?.id ?? "" }],
+    },
     include: { owner: true },
     orderBy: { dueDate: "asc" },
     take: 8,

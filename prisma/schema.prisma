@@ -124,6 +124,7 @@ model Task {
   startDate     DateTime
   dueDate       DateTime
   status        TaskStatus @default(BACKLOG)
+  isPrivate     Boolean    @default(false)
   estimatedHours Float     @default(1)
   notes         String     @default("")
   attachmentUrl String     @default("")

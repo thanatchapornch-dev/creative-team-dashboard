@@ -21,6 +21,7 @@ export type EditableTask = {
   estimatedHours: number;
   notes: string;
   attachmentUrl: string;
+  isPrivate: boolean;
 };
 
 export function TaskEditModal({ task, members }: { task: EditableTask; members: MemberOption[] }) {
@@ -59,6 +60,7 @@ export function TaskEditModal({ task, members }: { task: EditableTask; members: 
                   estimatedHours: Number(fd.get("estimatedHours") || 1),
                   notes: String(fd.get("notes") || ""),
                   attachmentUrl: String(fd.get("attachmentUrl") || ""),
+                  isPrivate: fd.get("isPrivate") === "on",
                 });
                 setOpen(false);
                 router.refresh();
@@ -102,6 +104,10 @@ export function TaskEditModal({ task, members }: { task: EditableTask; members: 
             <textarea name="brief" defaultValue={task.brief} placeholder="Brief" className="input" rows={3} />
             <textarea name="notes" defaultValue={task.notes} placeholder="Notes" className="input" rows={2} />
             <input name="attachmentUrl" defaultValue={task.attachmentUrl} placeholder="Attachment / Link (URL)" className="input" />
+            <label className="flex items-center gap-2 text-sm">
+              <input name="isPrivate" type="checkbox" defaultChecked={task.isPrivate} />
+              🔒 ส่วนตัว — เฉพาะเจ้าของงานเห็น (ไม่แสดงใน Team Queue ของคนอื่น)
+            </label>
 
             <div className="flex justify-end gap-2 mt-2">
               <button type="button" onClick={() => setOpen(false)} className="rounded-full px-4 py-2 text-sm font-medium">

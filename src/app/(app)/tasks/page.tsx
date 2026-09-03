@@ -59,6 +59,7 @@ export default async function MyTasksPage() {
                   estimatedHours: t.estimatedHours,
                   notes: t.notes,
                   attachmentUrl: t.attachmentUrl,
+                  isPrivate: t.isPrivate,
                 }}
                 members={members}
               />

@@ -14,7 +14,7 @@ export default async function ReportsPage() {
       include: { employee: true },
     }),
     computeTeamLoad(now),
-    prisma.task.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.task.groupBy({ by: ["status"], where: { isPrivate: false }, _count: { _all: true } }),
   ]);
 
   const approved = leaves.filter((l) => l.status === "APPROVED");

@@ -23,6 +23,7 @@ export type TaskFormInput = {
   estimatedHours: number;
   notes?: string;
   attachmentUrl?: string;
+  isPrivate?: boolean;
 };
 
 export async function createTaskAction(input: TaskFormInput) {
@@ -44,6 +45,7 @@ export async function createTaskAction(input: TaskFormInput) {
       estimatedHours: input.estimatedHours,
       notes: input.notes ?? "",
       attachmentUrl: input.attachmentUrl ?? "",
+      isPrivate: input.isPrivate ?? false,
     },
   });
 
@@ -112,6 +114,7 @@ export async function updateTaskAction(taskId: string, input: Partial<TaskFormIn
   if (input.estimatedHours !== undefined) data.estimatedHours = input.estimatedHours;
   if (input.notes !== undefined) data.notes = input.notes;
   if (input.attachmentUrl !== undefined) data.attachmentUrl = input.attachmentUrl;
+  if (input.isPrivate !== undefined) data.isPrivate = input.isPrivate;
 
   const task = await prisma.task.update({ where: { id: taskId }, data });
   revalidatePath("/tasks");
