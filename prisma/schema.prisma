@@ -176,18 +176,19 @@ model OvertimeEntry {
 }
 
 model NotificationLog {
-  id          String              @id @default(cuid())
-  recipientId String
-  recipient   Member              @relation("Recipient", fields: [recipientId], references: [id])
-  type        String
-  title       String
-  body        String
-  relatedType String              @default("")
-  relatedId   String              @default("")
-  channel     NotificationChannel @default(IN_APP)
-  status      NotificationStatus  @default(SENT)
-  createdAt   DateTime            @default(now())
-  readAt      DateTime?
+  id            String              @id @default(cuid())
+  recipientId   String?
+  recipient     Member?             @relation("Recipient", fields: [recipientId], references: [id])
+  externalEmail String              @default("")
+  type          String
+  title         String
+  body          String
+  relatedType   String              @default("")
+  relatedId     String              @default("")
+  channel       NotificationChannel @default(IN_APP)
+  status        NotificationStatus  @default(SENT)
+  createdAt     DateTime            @default(now())
+  readAt        DateTime?
 }
 
 model Settings {

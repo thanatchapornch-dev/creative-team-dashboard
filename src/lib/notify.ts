@@ -55,3 +55,32 @@ export async function notify(input: NotifyInput) {
 
   return { inApp, email: emailLog };
 }
+
+export type NotifyExternalInput = {
+  email: string;
+  type: string;
+  title: string;
+  body: string;
+};
+
+/**
+ * For recipients who aren't a Member (e.g. someone outside the team
+ * submitting the public equipment-borrow form) — queued the same way as
+ * notify()'s email, but with no in-app log (there's no account to attach it
+ * to) and no dashboard link in the body, since an external person has
+ * nowhere to log in to.
+ */
+export async function notifyExternalEmail(input: NotifyExternalInput) {
+  if (!input.email) return null;
+  return prisma.notificationLog.create({
+    data: {
+      recipientId: null,
+      externalEmail: input.email,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      channel: "EMAIL",
+      status: "QUEUED",
+    },
+  });
+}

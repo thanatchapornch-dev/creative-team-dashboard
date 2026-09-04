@@ -36,11 +36,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     emails: queued
-      .filter((q) => q.recipient.workEmail)
-      .map((q) => ({
-        to: q.recipient.workEmail,
-        subject: q.title,
-        body: q.body,
-      })),
+      .map((q) => ({ to: q.recipient?.workEmail || q.externalEmail, subject: q.title, body: q.body }))
+      .filter((q) => q.to),
   });
 }

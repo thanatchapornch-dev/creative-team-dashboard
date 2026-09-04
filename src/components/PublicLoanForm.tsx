@@ -12,6 +12,39 @@ const DEPARTMENTS = [
   "S&P", "IT Support", "People", "Legal", "Creative & Production", "อื่นๆ",
 ];
 
+const CATEGORY_LABEL: Record<string, string> = {
+  Camera: "📷 กล้อง",
+  Lens: "🔍 เลนส์",
+  Battery: "🔋 แบตเตอรี่",
+  Accessory: "🧰 อุปกรณ์เสริม",
+  Audio: "🎙️ เสียง",
+  Support: "🎚️ ขาตั้ง",
+};
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold text-[var(--muted)]">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-sm" style={{ background: "var(--paper, white)", border: "1px solid var(--line)" }}>
+      <div className="px-6 py-6 sm:px-8 sm:py-7" style={{ background: "var(--navy)", color: "white" }}>
+        <p className="text-xs font-semibold tracking-wide uppercase mb-1" style={{ color: "var(--lime)" }}>
+          CJx · Creative &amp; Production
+        </p>
+        <h1 className="text-xl sm:text-2xl font-bold">แบบฟอร์มขอยืมอุปกรณ์กล้อง</h1>
+        <p className="text-sm opacity-80 mt-1">ยืนยันการจองทันที — ทีมงานจะติดต่อกลับภายใน 1 วัน</p>
+      </div>
+      <div className="p-6 sm:p-8">{children}</div>
+    </div>
+  );
+}
+
 export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -78,108 +111,130 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
 
   if (success) {
     return (
-      <div className="card p-6 flex flex-col gap-2 items-start">
-        <p className="text-lg font-bold">✅ รับคำขอยืมอุปกรณ์แล้ว</p>
-        <p className="text-sm text-[var(--muted)]">ทีม Creative &amp; Production จะติดต่อกลับภายใน 1 วัน</p>
-        <button
-          type="button"
-          onClick={() => setSuccess(false)}
-          className="rounded-full px-4 py-2 text-sm font-semibold mt-2"
-          style={{ background: "var(--orange)", color: "white" }}
-        >
-          ส่งคำขอใหม่
-        </button>
-      </div>
+      <Shell>
+        <div className="flex flex-col items-start gap-2">
+          <span className="text-4xl">✅</span>
+          <p className="text-lg font-bold">รับคำขอยืมอุปกรณ์แล้ว</p>
+          <p className="text-sm text-[var(--muted)]">
+            ทีม Creative &amp; Production จะติดต่อกลับภายใน 1 วัน — เช็คอีเมลที่กรอกไว้สำหรับใบยืนยัน
+          </p>
+          <button
+            type="button"
+            onClick={() => setSuccess(false)}
+            className="rounded-full px-5 py-2 text-sm font-semibold mt-3"
+            style={{ background: "var(--orange)", color: "white" }}
+          >
+            ส่งคำขอใหม่
+          </button>
+        </div>
+      </Shell>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-6 flex flex-col gap-3 max-w-xl mx-auto">
-      <div>
-        <h1 className="text-lg font-bold">CJx Camera and Equipment Loan</h1>
-        <p className="text-sm text-[var(--muted)]">แบบฟอร์มขอยืมอุปกรณ์กล้อง/สื่อ จากทีม Creative &amp; Production</p>
-      </div>
-
-      <input placeholder="ชื่อ-นามสกุล" value={name} onChange={(e) => setName(e.target.value)} required className="input" />
-      <input placeholder="เบอร์ติดต่อ" value={contact} onChange={(e) => setContact(e.target.value)} required className="input" />
-      <input type="email" placeholder="อีเมล" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" />
-
-      <select value={department} onChange={(e) => setDepartment(e.target.value)} required className="input">
-        <option value="" disabled>แผนก / ทีม</option>
-        {DEPARTMENTS.map((d) => (
-          <option key={d} value={d}>{d}</option>
-        ))}
-      </select>
-
-      <input
-        placeholder="ชื่อโปรเจกต์ / งานที่ใช้"
-        value={projectName}
-        onChange={(e) => setProjectName(e.target.value)}
-        required
-        className="input"
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label className="text-xs text-[var(--muted)] flex flex-col gap-1">
-          วันที่ยืม
-          <input type="date" value={borrowDate} onChange={(e) => setBorrowDate(e.target.value)} required className="input" />
-        </label>
-        <label className="text-xs text-[var(--muted)] flex flex-col gap-1">
-          วันที่คืน
-          <input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} required className="input" />
-        </label>
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-lg p-3" style={{ border: "1px solid var(--line)" }}>
-        <p className="text-xs text-[var(--muted)]">
-          ความจุแบตเตอรี่: VDO ใช้ 3 ก้อน/วัน (กรณีไม่ได้ REC ต่อเนื่อง), PHOTO ใช้ 2 ก้อน/วัน (ไม่เปิดทิ้งไว้)
-        </p>
-        {[...byCategory.entries()].map(([category, group]) => (
-          <div key={category}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] mb-1">{category}</p>
-            <div className="flex flex-col gap-1.5">
-              {group.map((item) => (
-                <label key={item.id} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggle(item.id)} />
-                  {item.name}
-                </label>
+    <Shell>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="ชื่อ-นามสกุล *">
+            <input value={name} onChange={(e) => setName(e.target.value)} required className="input" />
+          </Field>
+          <Field label="แผนก / ทีม *">
+            <select value={department} onChange={(e) => setDepartment(e.target.value)} required className="input">
+              <option value="" disabled>เลือกแผนก</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>{d}</option>
               ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <input placeholder="อื่นๆ (ถ้ามี)" value={otherNote} onChange={(e) => setOtherNote(e.target.value)} className="input" />
-
-      {conflicts && conflicts.length > 0 && (
-        <div className="text-sm rounded-lg px-3 py-2 flex flex-col gap-1" style={{ background: "#fdeaea", color: "#a12b2b" }}>
-          <p className="font-semibold">⚠️ จองไม่ได้ — อุปกรณ์ชนกับคิวที่จองไว้แล้ว:</p>
-          {conflicts.map((c, i) => (
-            <p key={i}>
-              {c.itemName} — {c.borrower} จองไว้ {c.borrowDate} ถึง {c.returnDate}
-            </p>
-          ))}
+            </select>
+          </Field>
+          <Field label="เบอร์ติดต่อ *">
+            <input value={contact} onChange={(e) => setContact(e.target.value)} required className="input" />
+          </Field>
+          <Field label="อีเมล *">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="input" />
+          </Field>
         </div>
-      )}
 
-      <button
-        type="submit"
-        disabled={pending || selected.size === 0}
-        className="rounded-full px-4 py-2 text-sm font-semibold self-start"
-        style={{ background: "var(--orange)", color: "white", opacity: pending || selected.size === 0 ? 0.6 : 1 }}
-      >
-        {pending ? "กำลังส่งคำขอ..." : "ส่งคำขอยืมอุปกรณ์"}
-      </button>
+        <Field label="ชื่อโปรเจกต์ / งานที่ใช้ *">
+          <input value={projectName} onChange={(e) => setProjectName(e.target.value)} required className="input" />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="วันที่ยืม *">
+            <input type="date" value={borrowDate} onChange={(e) => setBorrowDate(e.target.value)} required className="input" />
+          </Field>
+          <Field label="วันที่คืน *">
+            <input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} required className="input" />
+          </Field>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-[var(--muted)] mb-2">อุปกรณ์ที่ต้องการ *</p>
+          <p className="text-xs text-[var(--muted)] mb-3 rounded-lg px-3 py-2" style={{ background: "var(--paper, #f7f5f0)" }}>
+            🔋 ความจุแบตเตอรี่ — VDO ใช้ 3 ก้อน/วัน (กรณีไม่ได้ REC ต่อเนื่อง), PHOTO ใช้ 2 ก้อน/วัน (ไม่เปิดทิ้งไว้)
+          </p>
+          <div className="flex flex-col gap-4 rounded-xl p-4" style={{ border: "1px solid var(--line)" }}>
+            {[...byCategory.entries()].map(([category, group]) => (
+              <div key={category}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] mb-2">
+                  {CATEGORY_LABEL[category] ?? category}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {group.map((item) => {
+                    const isSelected = selected.has(item.id);
+                    return (
+                      <label
+                        key={item.id}
+                        className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 cursor-pointer transition-colors"
+                        style={{
+                          background: isSelected ? "var(--lime)" : "var(--offwhite)",
+                          border: `1px solid ${isSelected ? "var(--lime)" : "var(--line)"}`,
+                        }}
+                      >
+                        <input type="checkbox" checked={isSelected} onChange={() => toggle(item.id)} />
+                        {item.name}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Field label="อื่นๆ (ถ้ามี)">
+          <input value={otherNote} onChange={(e) => setOtherNote(e.target.value)} className="input" />
+        </Field>
+
+        {conflicts && conflicts.length > 0 && (
+          <div className="text-sm rounded-lg px-4 py-3 flex flex-col gap-1" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+            <p className="font-semibold">⚠️ จองไม่ได้ — อุปกรณ์ชนกับคิวที่จองไว้แล้ว:</p>
+            {conflicts.map((c, i) => (
+              <p key={i}>
+                {c.itemName} — {c.borrower} จองไว้ {c.borrowDate} ถึง {c.returnDate}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={pending || selected.size === 0}
+          className="rounded-full px-6 py-3 text-sm font-semibold self-start"
+          style={{ background: "var(--orange)", color: "white", opacity: pending || selected.size === 0 ? 0.6 : 1 }}
+        >
+          {pending ? "กำลังส่งคำขอ..." : "ส่งคำขอยืมอุปกรณ์"}
+        </button>
+      </form>
 
       <style jsx>{`
         .input {
           border: 1px solid var(--line);
           border-radius: 0.6rem;
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
+          padding: 0.6rem 0.85rem;
+          font-size: 0.9rem;
           width: 100%;
         }
       `}</style>
-    </form>
+    </Shell>
   );
 }
