@@ -57,7 +57,7 @@ export async function createPublicLoanRequestAction(
     email: input.email.trim(),
     type: "EQUIPMENT_LOAN_EXTERNAL_CONFIRMED",
     title: `ยืนยันคำขอยืมอุปกรณ์ — ${loan.projectName}`,
-    body: `สวัสดีคุณ${input.name}\n\nทีม Creative & Production (CJx) ได้รับคำขอยืมอุปกรณ์ของคุณแล้ว:\n\nรายการอุปกรณ์: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nวันที่ยืม: ${loan.borrowDate.toDateString()}\nวันที่คืน: ${loan.returnDate.toDateString()}\n\nทีมงานจะติดต่อกลับภายใน 1 วันเพื่อนัดรับ-คืนอุปกรณ์ หากมีข้อสงสัยติดต่อกลับได้ที่อีเมลนี้\n\nขอบคุณค่ะ\nทีม Creative & Production, CJx`,
+    body: `สวัสดีคุณ ${input.name}\n\nทีม Creative & Production (CJx) ได้รับคำขอยืมอุปกรณ์ของคุณแล้ว:\n\nรายการอุปกรณ์: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nวันที่ยืม: ${loan.borrowDate.toDateString()}\nวันที่คืน: ${loan.returnDate.toDateString()}\n\nทีมงานจะติดต่อกลับภายใน 1 วันเพื่อนัดรับ-คืนอุปกรณ์ หากมีข้อสงสัยติดต่อกลับได้ที่อีเมลนี้\n\nขอบคุณค่ะ\nทีม Creative & Production, CJx`,
   });
 
   const dn = await prisma.member.findFirst({ where: { role: "LEADER" } });
