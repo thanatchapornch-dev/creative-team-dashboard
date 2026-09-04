@@ -8,14 +8,35 @@ export default async function ReportsPage() {
   const yearStart = new Date(now.getFullYear(), 0, 1);
   const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
-  const [leaves, load, taskStats] = await Promise.all([
+  const [leaves, load, taskStats, equipmentLoans] = await Promise.all([
     prisma.leaveRequest.findMany({
       where: { startDate: { gte: yearStart, lte: yearEnd } },
       include: { employee: true },
     }),
     computeTeamLoad(now),
     prisma.task.groupBy({ by: ["status"], where: { isPrivate: false }, _count: { _all: true } }),
+    prisma.equipmentLoan.findMany({
+      where: { createdAt: { gte: yearStart, lte: yearEnd } },
+      select: { createdAt: true, borrowerId: true, status: true },
+    }),
   ]);
+
+  const THAI_MONTHS_SHORT = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  const equipmentByMonth = Array.from({ length: 12 }, (_, i) => ({
+    month: THAI_MONTHS_SHORT[i],
+    total: 0,
+    internal: 0,
+    external: 0,
+    cancelled: 0,
+  }));
+  for (const loan of equipmentLoans) {
+    const bucket = equipmentByMonth[loan.createdAt.getMonth()];
+    bucket.total++;
+    if (loan.status === "CANCELLED") bucket.cancelled++;
+    else if (loan.borrowerId) bucket.internal++;
+    else bucket.external++;
+  }
+  const equipmentMonthsWithData = equipmentByMonth.filter((m) => m.total > 0);
 
   const approved = leaves.filter((l) => l.status === "APPROVED");
   const pending = leaves.filter((l) => l.status === "PENDING");
@@ -74,6 +95,40 @@ export default async function ReportsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">
+          การใช้งานระบบยืมอุปกรณ์ ({now.getFullYear()})
+        </h2>
+        {equipmentMonthsWithData.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">ยังไม่มีการจองในปีนี้</p>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-[var(--muted)]">
+                  <th className="py-2 px-3">เดือน</th>
+                  <th className="py-2 px-3">รวมทั้งหมด</th>
+                  <th className="py-2 px-3">ทีมเรา</th>
+                  <th className="py-2 px-3">นอกทีม (จากลิงก์ /borrow)</th>
+                  <th className="py-2 px-3">ยกเลิก</th>
+                </tr>
+              </thead>
+              <tbody>
+                {equipmentMonthsWithData.map((m) => (
+                  <tr key={m.month} className="border-t" style={{ borderColor: "var(--line)" }}>
+                    <td className="py-2 px-3 font-medium">{m.month}</td>
+                    <td className="py-2 px-3 font-semibold">{m.total}</td>
+                    <td className="py-2 px-3">{m.internal}</td>
+                    <td className="py-2 px-3">{m.external}</td>
+                    <td className="py-2 px-3 text-[var(--muted)]">{m.cancelled}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
