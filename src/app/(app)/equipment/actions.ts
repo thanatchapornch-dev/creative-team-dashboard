@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireMember, requireRole } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { parseDateOnly } from "@/lib/date-only";
+import { findEquipmentConflicts, type LoanConflict } from "@/lib/equipment";
 
 export type CreateLoanInput = {
   projectName: string;
@@ -14,12 +15,7 @@ export type CreateLoanInput = {
   otherNote?: string;
 };
 
-export type LoanConflict = {
-  itemName: string;
-  borrower: string;
-  borrowDate: string;
-  returnDate: string;
-};
+export type { LoanConflict };
 
 export async function createLoanAction(
   input: CreateLoanInput
@@ -31,28 +27,9 @@ export async function createLoanAction(
   const returnDate = parseDateOnly(input.returnDate);
   if (returnDate < borrowDate) throw new Error("INVALID_DATES");
 
-  const conflicts = await prisma.equipmentLoanItem.findMany({
-    where: {
-      equipmentItemId: { in: input.itemIds },
-      loan: {
-        status: "CONFIRMED",
-        borrowDate: { lte: returnDate },
-        returnDate: { gte: borrowDate },
-      },
-    },
-    include: { loan: { include: { borrower: true } }, equipmentItem: true },
-  });
-
+  const conflicts = await findEquipmentConflicts(input.itemIds, borrowDate, returnDate);
   if (conflicts.length > 0) {
-    return {
-      ok: false,
-      conflicts: conflicts.map((c) => ({
-        itemName: c.equipmentItem.name,
-        borrower: c.loan.borrower.nickname,
-        borrowDate: c.loan.borrowDate.toISOString().slice(0, 10),
-        returnDate: c.loan.returnDate.toISOString().slice(0, 10),
-      })),
-    };
+    return { ok: false, conflicts };
   }
 
   const loan = await prisma.equipmentLoan.create({

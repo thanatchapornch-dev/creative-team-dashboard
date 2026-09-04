@@ -252,15 +252,19 @@ model EquipmentItem {
 }
 
 model EquipmentLoan {
-  id          String   @id @default(cuid())
-  borrowerId  String
-  borrower    Member   @relation(fields: [borrowerId], references: [id])
-  projectName String
-  otherNote   String   @default("")
-  borrowDate  DateTime
-  returnDate  DateTime
-  status      String   @default("CONFIRMED")
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  borrowerId      String?
+  borrower        Member?  @relation(fields: [borrowerId], references: [id])
+  externalName    String   @default("")
+  externalContact String   @default("")
+  externalEmail   String   @default("")
+  externalDept    String   @default("")
+  projectName     String
+  otherNote       String   @default("")
+  borrowDate      DateTime
+  returnDate      DateTime
+  status          String   @default("CONFIRMED")
+  createdAt       DateTime @default(now())
 
   items EquipmentLoanItem[]
 }

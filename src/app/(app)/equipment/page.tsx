@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentMember } from "@/lib/auth";
+import { loanBorrowerLabel } from "@/lib/equipment";
 import { EquipmentBookingForm } from "@/components/EquipmentBookingForm";
 import { cancelLoanAction } from "./actions";
 
@@ -33,12 +34,18 @@ export default async function EquipmentPage() {
               <div key={loan.id} className="flex items-start justify-between gap-2 border-b pb-2 text-sm" style={{ borderColor: "var(--line)" }}>
                 <div className="min-w-0">
                   <p className="font-medium">
-                    {loan.borrower.nickname} · {loan.projectName}
+                    {!loan.borrower && <span title="คำขอจากภายนอกทีม">🌐 </span>}
+                    {loanBorrowerLabel(loan)} · {loan.projectName}
                   </p>
                   <p className="text-xs text-[var(--muted)]">
                     {loan.borrowDate.toISOString().slice(0, 10)} – {loan.returnDate.toISOString().slice(0, 10)}
                   </p>
                   <p className="text-xs mt-1">{loan.items.map((i) => i.equipmentItem.name).join(", ")}</p>
+                  {!loan.borrower && (
+                    <p className="text-xs text-[var(--muted)]">
+                      ติดต่อ: {loan.externalContact} {loan.externalEmail && `· ${loan.externalEmail}`}
+                    </p>
+                  )}
                   {loan.otherNote && <p className="text-xs text-[var(--muted)]">อื่นๆ: {loan.otherNote}</p>}
                 </div>
                 {(loan.borrowerId === member.id || member.role === "LEADER" || member.role === "ADMIN") && (
