@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { href: "/leave", label: "Leave", icon: "🏖️" },
   { href: "/approval", label: "Approval", icon: "📋", roles: ["LEADER", "ADMIN"] },
   { href: "/openchat", label: "OpenChat", icon: "💬" },
+  { href: "/equipment", label: "ยืมอุปกรณ์", icon: "📷" },
   { href: "/reports", label: "Reports", icon: "📊" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];

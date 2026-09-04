@@ -106,6 +106,7 @@ model Member {
   approvedOvertime OvertimeEntry[] @relation("OvertimeApprover")
   notifications    NotificationLog[] @relation("Recipient")
   openChatCounts   OpenChatCount[]   @relation("OpenChatRecorder")
+  equipmentLoans   EquipmentLoan[]
 }
 
 model Task {
@@ -237,4 +238,39 @@ model OpenChatCount {
   recordedAt    DateTime @default(now())
 
   @@unique([storeId, weekOf])
+}
+
+model EquipmentItem {
+  id        String   @id @default(cuid())
+  name      String
+  category  String   @default("")
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  loanItems EquipmentLoanItem[]
+}
+
+model EquipmentLoan {
+  id          String   @id @default(cuid())
+  borrowerId  String
+  borrower    Member   @relation(fields: [borrowerId], references: [id])
+  projectName String
+  otherNote   String   @default("")
+  borrowDate  DateTime
+  returnDate  DateTime
+  status      String   @default("CONFIRMED")
+  createdAt   DateTime @default(now())
+
+  items EquipmentLoanItem[]
+}
+
+model EquipmentLoanItem {
+  id              String        @id @default(cuid())
+  loanId          String
+  loan            EquipmentLoan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  equipmentItemId String
+  equipmentItem   EquipmentItem @relation(fields: [equipmentItemId], references: [id])
+
+  @@unique([loanId, equipmentItemId])
 }

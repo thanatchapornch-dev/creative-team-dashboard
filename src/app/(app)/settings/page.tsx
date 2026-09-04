@@ -6,6 +6,7 @@ import { ProfileSettingsForm } from "@/components/ProfileSettingsForm";
 import { CompanySettingsForm } from "@/components/CompanySettingsForm";
 import { MembersAdminSection } from "@/components/MembersAdminSection";
 import { StoreUploadForm } from "@/components/StoreUploadForm";
+import { EquipmentAdminSection } from "@/components/EquipmentAdminSection";
 
 const STUCK_QUEUE_HOURS = 2;
 
@@ -43,10 +44,11 @@ export default async function SettingsPage() {
   if (!member) return null;
   const isAdmin = member.role === "LEADER" || member.role === "ADMIN";
 
-  const [settings, membersRaw, emailStats] = await Promise.all([
+  const [settings, membersRaw, emailStats, equipmentItems] = await Promise.all([
     getSettings(),
     isAdmin ? prisma.member.findMany({ orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
     isAdmin ? getEmailQueueStats() : Promise.resolve(null),
+    isAdmin ? prisma.equipmentItem.findMany({ orderBy: { sortOrder: "asc" } }) : Promise.resolve([]),
   ]);
   const members = sortLeaderFirst(membersRaw);
 
@@ -103,6 +105,9 @@ export default async function SettingsPage() {
             </div>
           )}
           <StoreUploadForm />
+          <EquipmentAdminSection
+            items={equipmentItems.map((i) => ({ id: i.id, name: i.name, category: i.category, active: i.active }))}
+          />
         </>
       )}
     </div>
