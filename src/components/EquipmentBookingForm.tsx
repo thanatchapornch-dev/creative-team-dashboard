@@ -15,6 +15,7 @@ export function EquipmentBookingForm({ items }: { items: EquipmentOption[] }) {
   const [otherNote, setOtherNote] = useState("");
   const [conflicts, setConflicts] = useState<LoanConflict[] | null>(null);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const byCategory = useMemo(() => {
@@ -39,23 +40,28 @@ export function EquipmentBookingForm({ items }: { items: EquipmentOption[] }) {
     e.preventDefault();
     setConflicts(null);
     setSuccess(false);
+    setError(null);
     if (selected.size === 0) return;
     startTransition(async () => {
-      const result = await createLoanAction({
-        projectName,
-        itemIds: [...selected],
-        borrowDate,
-        returnDate,
-        otherNote,
-      });
-      if (result.ok) {
-        setSuccess(true);
-        setSelected(new Set());
-        setProjectName("");
-        setOtherNote("");
-        router.refresh();
-      } else {
-        setConflicts(result.conflicts);
+      try {
+        const result = await createLoanAction({
+          projectName,
+          itemIds: [...selected],
+          borrowDate,
+          returnDate,
+          otherNote,
+        });
+        if (result.ok) {
+          setSuccess(true);
+          setSelected(new Set());
+          setProjectName("");
+          setOtherNote("");
+          router.refresh();
+        } else {
+          setConflicts(result.conflicts);
+        }
+      } catch {
+        setError("จองไม่สำเร็จ เชื่อมต่อไม่ได้หรือมีปัญหาชั่วคราว — ลองกดจองอีกครั้ง");
       }
     });
   }
@@ -108,6 +114,12 @@ export function EquipmentBookingForm({ items }: { items: EquipmentOption[] }) {
         onChange={(e) => setOtherNote(e.target.value)}
         className="input"
       />
+
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
+        </p>
+      )}
 
       {conflicts && conflicts.length > 0 && (
         <div className="text-sm rounded-lg px-3 py-2 flex flex-col gap-1" style={{ background: "#fdeaea", color: "#a12b2b" }}>

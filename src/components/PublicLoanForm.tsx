@@ -58,6 +58,7 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
   const [otherNote, setOtherNote] = useState("");
   const [conflicts, setConflicts] = useState<LoanConflict[] | null>(null);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const byCategory = useMemo(() => {
     const groups = new Map<string, EquipmentOption[]>();
@@ -81,30 +82,35 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
     e.preventDefault();
     setConflicts(null);
     setSuccess(false);
+    setError(null);
     if (selected.size === 0) return;
     startTransition(async () => {
-      const result = await createPublicLoanRequestAction({
-        name,
-        contact,
-        email,
-        department,
-        projectName,
-        itemIds: [...selected],
-        borrowDate,
-        returnDate,
-        otherNote,
-      });
-      if (result.ok) {
-        setSuccess(true);
-        setSelected(new Set());
-        setName("");
-        setContact("");
-        setEmail("");
-        setDepartment("");
-        setProjectName("");
-        setOtherNote("");
-      } else {
-        setConflicts(result.conflicts);
+      try {
+        const result = await createPublicLoanRequestAction({
+          name,
+          contact,
+          email,
+          department,
+          projectName,
+          itemIds: [...selected],
+          borrowDate,
+          returnDate,
+          otherNote,
+        });
+        if (result.ok) {
+          setSuccess(true);
+          setSelected(new Set());
+          setName("");
+          setContact("");
+          setEmail("");
+          setDepartment("");
+          setProjectName("");
+          setOtherNote("");
+        } else {
+          setConflicts(result.conflicts);
+        }
+      } catch {
+        setError("ส่งคำขอไม่สำเร็จ เชื่อมต่อไม่ได้หรือมีปัญหาชั่วคราว — ลองกดส่งอีกครั้ง หรือทักไลน์/โทรหาทีมโดยตรงถ้ายังไม่ได้");
       }
     });
   }
@@ -204,6 +210,12 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
         <Field label="อื่นๆ (ถ้ามี)">
           <input value={otherNote} onChange={(e) => setOtherNote(e.target.value)} className="input" />
         </Field>
+
+        {error && (
+          <div className="text-sm rounded-lg px-4 py-3" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+            ⚠️ {error}
+          </div>
+        )}
 
         {conflicts && conflicts.length > 0 && (
           <div className="text-sm rounded-lg px-4 py-3 flex flex-col gap-1" style={{ background: "#fdeaea", color: "#a12b2b" }}>

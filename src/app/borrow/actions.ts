@@ -53,24 +53,40 @@ export async function createPublicLoanRequestAction(
   const itemNames = loan.items.map((i) => i.equipmentItem.name).join(", ");
   const dateRange = `${loan.borrowDate.toDateString()} – ${loan.returnDate.toDateString()}`;
 
-  await notifyExternalEmail({
-    email: input.email.trim(),
-    type: "EQUIPMENT_LOAN_EXTERNAL_CONFIRMED",
-    title: `ยืนยันคำขอยืมอุปกรณ์ — ${loan.projectName}`,
-    body: `สวัสดีคุณ ${input.name}\n\nทีม Creative & Production (CJx) ได้รับคำขอยืมอุปกรณ์ของคุณแล้ว:\n\nรายการอุปกรณ์: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nวันที่ยืม: ${loan.borrowDate.toDateString()}\nวันที่คืน: ${loan.returnDate.toDateString()}\n\nทีมงานจะติดต่อกลับภายใน 1 วันเพื่อนัดรับ-คืนอุปกรณ์ หากมีข้อสงสัยติดต่อกลับได้ที่อีเมลนี้\n\nขอบคุณค่ะ\nทีม Creative & Production, CJx`,
-  });
-
-  const dn = await prisma.member.findFirst({ where: { role: "LEADER" } });
-  if (dn) {
-    await notify({
-      recipientId: dn.id,
-      type: "EQUIPMENT_LOAN_EXTERNAL",
-      title: `📷 คำขอยืมอุปกรณ์จากภายนอก: ${input.name}`,
-      body: `${input.name} (${input.department || "ไม่ระบุแผนก"}) ขอยืม: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nวันที่: ${dateRange}\nติดต่อ: ${input.contact} · ${input.email}\n\nรบกวนเช็คภายใน 1 วัน`,
-      sendEmail: true,
+  // From here on, the booking itself is already committed — nothing below this
+  // point may throw and hide that success from the submitter, so each side
+  // effect is isolated in its own try/catch.
+  try {
+    await notifyExternalEmail({
+      email: input.email.trim(),
+      type: "EQUIPMENT_LOAN_EXTERNAL_CONFIRMED",
+      title: `ยืนยันคำขอยืมอุปกรณ์ — ${loan.projectName}`,
+      body: `สวัสดีคุณ ${input.name}\n\nทีม Creative & Production (CJx) ได้รับคำขอยืมอุปกรณ์ของคุณแล้ว:\n\nรายการอุปกรณ์: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nวันที่ยืม: ${loan.borrowDate.toDateString()}\nวันที่คืน: ${loan.returnDate.toDateString()}\n\nทีมงานจะติดต่อกลับภายใน 1 วันเพื่อนัดรับ-คืนอุปกรณ์ หากมีข้อสงสัยติดต่อกลับได้ที่อีเมลนี้\n\nขอบคุณค่ะ\nทีม Creative & Production, CJx`,
     });
+  } catch (err) {
+    console.error("notifyExternalEmail failed for equipment loan", loan.id, err);
   }
 
-  revalidatePath("/equipment");
+  try {
+    const dn = await prisma.member.findFirst({ where: { role: "LEADER" } });
+    if (dn) {
+      await notify({
+        recipientId: dn.id,
+        type: "EQUIPMENT_LOAN_EXTERNAL",
+        title: `📷 คำขอยืมอุปกรณ์จากภายนอก: ${input.name}`,
+        body: `${input.name} (${input.department || "ไม่ระบุแผนก"}) ขอยืม: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nวันที่: ${dateRange}\nติดต่อ: ${input.contact} · ${input.email}\n\nรบกวนเช็คภายใน 1 วัน`,
+        sendEmail: true,
+      });
+    }
+  } catch (err) {
+    console.error("DN notify failed for equipment loan", loan.id, err);
+  }
+
+  try {
+    revalidatePath("/equipment");
+  } catch (err) {
+    console.error("revalidatePath failed for equipment loan", loan.id, err);
+  }
+
   return { ok: true };
 }

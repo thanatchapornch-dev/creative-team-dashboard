@@ -48,26 +48,41 @@ export async function createLoanAction(
   const itemNames = loan.items.map((i) => i.equipmentItem.name).join(", ");
   const dateRange = `${loan.borrowDate.toDateString()} – ${loan.returnDate.toDateString()}`;
 
-  await notify({
-    recipientId: member.id,
-    type: "EQUIPMENT_LOAN_CONFIRMED",
-    title: "📷 รับคำขอยืมอุปกรณ์แล้ว",
-    body: `รับคำขอยืมอุปกรณ์ของคุณแล้ว: ${itemNames}\nวันที่: ${dateRange}\nโปรเจกต์: ${loan.projectName}\n\nจะติดต่อกลับภายใน 1 วันถ้ามีปัญหา`,
-    sendEmail: true,
-  });
-
-  const dn = await prisma.member.findFirst({ where: { role: "LEADER" } });
-  if (dn && dn.id !== member.id) {
+  // Booking is already committed at this point — nothing below may throw and
+  // hide that success from the person who just booked it.
+  try {
     await notify({
-      recipientId: dn.id,
-      type: "EQUIPMENT_LOAN_NEW",
-      title: `📷 มีการจองอุปกรณ์ใหม่: ${member.nickname}`,
-      body: `${member.nickname} จองอุปกรณ์: ${itemNames}\nวันที่: ${dateRange}\nโปรเจกต์: ${loan.projectName}\n\nรบกวนเช็คภายใน 1 วัน`,
+      recipientId: member.id,
+      type: "EQUIPMENT_LOAN_CONFIRMED",
+      title: "📷 รับคำขอยืมอุปกรณ์แล้ว",
+      body: `รับคำขอยืมอุปกรณ์ของคุณแล้ว: ${itemNames}\nวันที่: ${dateRange}\nโปรเจกต์: ${loan.projectName}\n\nจะติดต่อกลับภายใน 1 วันถ้ามีปัญหา`,
       sendEmail: true,
     });
+  } catch (err) {
+    console.error("notify borrower failed for equipment loan", loan.id, err);
   }
 
-  revalidatePath("/equipment");
+  try {
+    const dn = await prisma.member.findFirst({ where: { role: "LEADER" } });
+    if (dn && dn.id !== member.id) {
+      await notify({
+        recipientId: dn.id,
+        type: "EQUIPMENT_LOAN_NEW",
+        title: `📷 มีการจองอุปกรณ์ใหม่: ${member.nickname}`,
+        body: `${member.nickname} จองอุปกรณ์: ${itemNames}\nวันที่: ${dateRange}\nโปรเจกต์: ${loan.projectName}\n\nรบกวนเช็คภายใน 1 วัน`,
+        sendEmail: true,
+      });
+    }
+  } catch (err) {
+    console.error("notify DN failed for equipment loan", loan.id, err);
+  }
+
+  try {
+    revalidatePath("/equipment");
+  } catch (err) {
+    console.error("revalidatePath failed for equipment loan", loan.id, err);
+  }
+
   return { ok: true };
 }
 
