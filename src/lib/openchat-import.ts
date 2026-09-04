@@ -2,7 +2,7 @@ import { prisma } from "./prisma";
 import { weekStartForCalendarDate } from "./date-only";
 import { parseXlsxRows } from "./xlsx-parse";
 
-const DATE_HEADER_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+const DATE_HEADER_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
 export type OpenChatUploadUpdate = { weekOf: string; weekLabel: string; memberCount: number };
 
