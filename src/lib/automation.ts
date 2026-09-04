@@ -160,3 +160,62 @@ export async function checkPinTimelineReminder(now: Date = new Date()) {
     });
   }
 }
+
+/**
+ * Daily reminder for whoever borrowed equipment that's due back today —
+ * nothing else in the equipment-loan flow tells someone "return this now",
+ * only that the booking was confirmed. Also CCs DN so she stays aware of
+ * the team's equipment activity, per her explicit ask. External (non-team)
+ * borrowers aren't covered — no dashboard account to notify in-app, and
+ * DN specifically scoped this to the internal team.
+ */
+export async function checkEquipmentReturnReminder(now: Date = new Date()) {
+  const todayStart = bangkokStartOfDay(now);
+  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+  const dueTodayLoans = await prisma.equipmentLoan.findMany({
+    where: {
+      status: "CONFIRMED",
+      borrowerId: { not: null },
+      returnDate: { gte: todayStart, lte: todayEnd },
+    },
+    include: { borrower: true, items: { include: { equipmentItem: true } } },
+  });
+  if (dueTodayLoans.length === 0) return;
+
+  const alreadyRemindedToday = await prisma.notificationLog.findMany({
+    where: { type: "EQUIPMENT_RETURN_REMINDER", createdAt: { gte: todayStart } },
+    select: { relatedId: true },
+  });
+  const remindedLoanIds = new Set(alreadyRemindedToday.map((n) => n.relatedId));
+
+  const dn = await prisma.member.findFirst({ where: { role: "LEADER" } });
+
+  for (const loan of dueTodayLoans) {
+    if (remindedLoanIds.has(loan.id) || !loan.borrower) continue;
+
+    const itemNames = loan.items.map((i) => i.equipmentItem.name).join(", ");
+
+    await notify({
+      recipientId: loan.borrowerId!,
+      type: "EQUIPMENT_RETURN_REMINDER",
+      title: "📷 อย่าลืมคืนอุปกรณ์วันนี้",
+      body: `วันนี้ครบกำหนดคืนอุปกรณ์: ${itemNames}\nโปรเจกต์: ${loan.projectName}`,
+      relatedType: "EquipmentLoan",
+      relatedId: loan.id,
+      sendEmail: true,
+    });
+
+    if (dn && dn.id !== loan.borrowerId) {
+      await notify({
+        recipientId: dn.id,
+        type: "EQUIPMENT_RETURN_REMINDER",
+        title: `📷 ${loan.borrower.nickname} ครบกำหนดคืนอุปกรณ์วันนี้`,
+        body: `${loan.borrower.nickname} ยืม: ${itemNames}\nโปรเจกต์: ${loan.projectName}\nครบกำหนดคืนวันนี้`,
+        relatedType: "EquipmentLoan",
+        relatedId: loan.id,
+        sendEmail: true,
+      });
+    }
+  }
+}
