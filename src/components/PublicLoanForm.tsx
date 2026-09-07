@@ -13,18 +13,21 @@ const DEPARTMENTS = [
 ];
 
 const CATEGORY_LABEL: Record<string, string> = {
-  Camera: "📷 กล้อง",
-  Lens: "🔍 เลนส์",
-  Battery: "🔋 แบตเตอรี่",
-  Accessory: "🧰 อุปกรณ์เสริม",
-  Audio: "🎙️ เสียง",
-  Support: "🎚️ ขาตั้ง",
+  Camera: "กล้อง",
+  Lens: "เลนส์",
+  Battery: "แบตเตอรี่",
+  Accessory: "อุปกรณ์เสริม",
+  Audio: "เสียง",
+  Support: "ขาตั้ง",
 };
+
+const INK = "#111214";
+const YELLOW = "#FFD400";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold text-[var(--muted)]">{label}</span>
+      <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "#6B6D74" }}>{label}</span>
       {children}
     </label>
   );
@@ -32,13 +35,21 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="max-w-2xl mx-auto rounded-2xl overflow-hidden shadow-sm" style={{ background: "var(--paper, white)", border: "1px solid var(--line)" }}>
-      <div className="px-6 py-6 sm:px-8 sm:py-7" style={{ background: "var(--navy)", color: "white" }}>
-        <p className="text-xs font-semibold tracking-wide uppercase mb-1" style={{ color: "var(--lime)" }}>
-          CJx · Creative &amp; Production
-        </p>
-        <h1 className="text-xl sm:text-2xl font-bold">แบบฟอร์มขอยืมอุปกรณ์กล้อง</h1>
-        <p className="text-sm opacity-80 mt-1">ยืนยันการจองทันที — ทีมงานจะติดต่อกลับภายใน 1 วัน</p>
+    <div className="max-w-2xl mx-auto rounded-2xl overflow-hidden" style={{ background: "white", border: `1px solid #E5E5E7`, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+      <div className="px-6 py-7 sm:px-8" style={{ background: INK }}>
+        <div className="flex items-center gap-3 mb-4">
+          <span
+            className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-lg font-black tracking-tight"
+            style={{ background: YELLOW, color: INK }}
+          >
+            CJx
+          </span>
+          <span className="text-xs font-semibold tracking-widest uppercase" style={{ color: YELLOW }}>
+            Creative &amp; Production
+          </span>
+        </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">แบบฟอร์มขอยืมอุปกรณ์กล้อง</h1>
+        <p className="text-sm mt-1" style={{ color: "#B9BAC0" }}>ยืนยันการจองทันที — ทีมงานจะติดต่อกลับภายใน 1 วัน</p>
       </div>
       <div className="p-6 sm:p-8">{children}</div>
     </div>
@@ -119,16 +130,21 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
     return (
       <Shell>
         <div className="flex flex-col items-start gap-2">
-          <span className="text-4xl">✅</span>
-          <p className="text-lg font-bold">รับคำขอยืมอุปกรณ์แล้ว</p>
-          <p className="text-sm text-[var(--muted)]">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-1"
+            style={{ background: "#EAF7EC", color: "#2C8A3F" }}
+          >
+            ✓
+          </div>
+          <p className="text-lg font-bold" style={{ color: INK }}>รับคำขอยืมอุปกรณ์แล้ว</p>
+          <p className="text-sm" style={{ color: "#6B6D74" }}>
             ทีม Creative &amp; Production จะติดต่อกลับภายใน 1 วัน — เช็คอีเมลที่กรอกไว้สำหรับใบยืนยัน
           </p>
           <button
             type="button"
             onClick={() => setSuccess(false)}
             className="rounded-full px-5 py-2 text-sm font-semibold mt-3"
-            style={{ background: "var(--orange)", color: "white" }}
+            style={{ background: YELLOW, color: INK }}
           >
             ส่งคำขอใหม่
           </button>
@@ -174,14 +190,14 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-[var(--muted)] mb-2">อุปกรณ์ที่ต้องการ *</p>
-          <p className="text-xs text-[var(--muted)] mb-3 rounded-lg px-3 py-2" style={{ background: "var(--paper, #f7f5f0)" }}>
-            🔋 ความจุแบตเตอรี่ — VDO ใช้ 3 ก้อน/วัน (กรณีไม่ได้ REC ต่อเนื่อง), PHOTO ใช้ 2 ก้อน/วัน (ไม่เปิดทิ้งไว้)
+          <p className="text-xs font-semibold tracking-wide uppercase mb-2" style={{ color: "#6B6D74" }}>อุปกรณ์ที่ต้องการ *</p>
+          <p className="text-xs mb-3 rounded-lg px-3 py-2" style={{ background: "#F5F5F6", color: "#6B6D74" }}>
+            ความจุแบตเตอรี่ — VDO ใช้ 3 ก้อน/วัน (กรณีไม่ได้ REC ต่อเนื่อง), PHOTO ใช้ 2 ก้อน/วัน (ไม่เปิดทิ้งไว้)
           </p>
-          <div className="flex flex-col gap-4 rounded-xl p-4" style={{ border: "1px solid var(--line)" }}>
+          <div className="flex flex-col gap-4 rounded-xl p-4" style={{ border: "1px solid #E5E5E7" }}>
             {[...byCategory.entries()].map(([category, group]) => (
               <div key={category}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: "#6B6D74" }}>
                   {CATEGORY_LABEL[category] ?? category}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -192,8 +208,10 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
                         key={item.id}
                         className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 cursor-pointer transition-colors"
                         style={{
-                          background: isSelected ? "var(--lime)" : "var(--offwhite)",
-                          border: `1px solid ${isSelected ? "var(--lime)" : "var(--line)"}`,
+                          background: isSelected ? YELLOW : "#F5F5F6",
+                          border: `1px solid ${isSelected ? YELLOW : "#E5E5E7"}`,
+                          color: INK,
+                          fontWeight: isSelected ? 600 : 400,
                         }}
                       >
                         <input type="checkbox" checked={isSelected} onChange={() => toggle(item.id)} />
@@ -212,14 +230,14 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
         </Field>
 
         {error && (
-          <div className="text-sm rounded-lg px-4 py-3" style={{ background: "#fdeaea", color: "#a12b2b" }}>
-            ⚠️ {error}
+          <div className="text-sm rounded-lg px-4 py-3" style={{ background: "#FDEAEA", color: "#A12B2B" }}>
+            {error}
           </div>
         )}
 
         {conflicts && conflicts.length > 0 && (
-          <div className="text-sm rounded-lg px-4 py-3 flex flex-col gap-1" style={{ background: "#fdeaea", color: "#a12b2b" }}>
-            <p className="font-semibold">⚠️ จองไม่ได้ — อุปกรณ์ชนกับคิวที่จองไว้แล้ว:</p>
+          <div className="text-sm rounded-lg px-4 py-3 flex flex-col gap-1" style={{ background: "#FDEAEA", color: "#A12B2B" }}>
+            <p className="font-semibold">จองไม่ได้ — อุปกรณ์ชนกับคิวที่จองไว้แล้ว:</p>
             {conflicts.map((c, i) => (
               <p key={i}>
                 {c.itemName} — {c.borrower} จองไว้ {c.borrowDate} ถึง {c.returnDate}
@@ -231,8 +249,8 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
         <button
           type="submit"
           disabled={pending || selected.size === 0}
-          className="rounded-full px-6 py-3 text-sm font-semibold self-start"
-          style={{ background: "var(--orange)", color: "white", opacity: pending || selected.size === 0 ? 0.6 : 1 }}
+          className="rounded-full px-6 py-3 text-sm font-bold self-start"
+          style={{ background: YELLOW, color: INK, opacity: pending || selected.size === 0 ? 0.5 : 1 }}
         >
           {pending ? "กำลังส่งคำขอ..." : "ส่งคำขอยืมอุปกรณ์"}
         </button>
@@ -240,11 +258,17 @@ export function PublicLoanForm({ items }: { items: EquipmentOption[] }) {
 
       <style jsx>{`
         .input {
-          border: 1px solid var(--line);
+          border: 1px solid #E5E5E7;
           border-radius: 0.6rem;
           padding: 0.6rem 0.85rem;
           font-size: 0.9rem;
           width: 100%;
+          color: ${INK};
+        }
+        .input:focus {
+          outline: none;
+          border-color: ${YELLOW};
+          box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.25);
         }
       `}</style>
     </Shell>
