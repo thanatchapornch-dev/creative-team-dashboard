@@ -36,7 +36,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-2xl mx-auto rounded-2xl overflow-hidden" style={{ background: "white", border: `1px solid #E5E5E7`, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-      <div className="px-6 py-7 sm:px-8" style={{ background: INK }}>
+      <div className="relative px-6 py-7 sm:px-8" style={{ background: INK }}>
+        <img
+          src="/brand/mumi.png"
+          alt=""
+          className="absolute top-3 right-4 sm:right-6 w-14 h-14 sm:w-16 sm:h-16 object-contain"
+        />
         <div className="flex items-center gap-3 mb-4">
           <span
             className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-lg font-black tracking-tight"
@@ -48,7 +53,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             Creative &amp; Production
           </span>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-white">แบบฟอร์มขอยืมอุปกรณ์กล้อง</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white pr-16 sm:pr-20">แบบฟอร์มขอยืมอุปกรณ์กล้อง</h1>
         <p className="text-sm mt-1" style={{ color: "#B9BAC0" }}>ยืนยันการจองทันที — ทีมงานจะติดต่อกลับภายใน 1 วัน</p>
       </div>
       <div className="p-6 sm:p-8">{children}</div>
