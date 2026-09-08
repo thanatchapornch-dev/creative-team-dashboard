@@ -17,7 +17,7 @@ export default async function OpenChatPage() {
   const weekOf = bangkokWeekStart();
   const weekLabel = weekOf.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
 
-  const [stores, thisWeekCounts, lastWeekTotal] = await Promise.all([
+  const [stores, thisWeekCounts, lastWeekTotal, allCounts] = await Promise.all([
     prisma.store.findMany({
       where: { status: "Active store" },
       orderBy: [{ province: "asc" }, { name: "asc" }],
@@ -27,22 +27,48 @@ export default async function OpenChatPage() {
       where: { weekOf: new Date(weekOf.getTime() - 7 * 24 * 60 * 60 * 1000), store: { status: "Active store" } },
       _sum: { memberCount: true },
     }),
+    // Latest known count per store regardless of week -- so the page still shows
+    // last week's (or older) numbers instead of a wall of "—" every Mon/Tue
+    // before this week's counts have been submitted. Ordered desc by weekOf so
+    // the first row seen per storeId below is that store's most recent one.
+    prisma.openChatCount.findMany({
+      where: { store: { status: "Active store" } },
+      orderBy: { weekOf: "desc" },
+      select: { storeId: true, weekOf: true, memberCount: true },
+    }),
   ]);
 
-  const countByStore = new Map(thisWeekCounts.map((c) => [c.storeId, c.memberCount]));
-  const thisWeekTotal = thisWeekCounts.reduce((s, c) => s + c.memberCount, 0);
   const submittedCount = thisWeekCounts.length;
 
-  const rows = stores.map((s) => ({
-    id: s.id,
-    name: s.name,
-    province: s.province,
-    branchCode: s.branchCode,
-    storeCode: s.storeCode,
-    googleMapsUrl: s.googleMapsUrl,
-    grandOpening: s.grandOpening,
-    currentCount: countByStore.get(s.id) ?? null,
-  }));
+  const latestByStore = new Map<string, { memberCount: number; weekOf: Date }>();
+  for (const c of allCounts) {
+    if (!latestByStore.has(c.storeId)) latestByStore.set(c.storeId, { memberCount: c.memberCount, weekOf: c.weekOf });
+  }
+
+  const rows = stores.map((s) => {
+    const latest = latestByStore.get(s.id);
+    const isCurrentWeek = !!latest && latest.weekOf.getTime() === weekOf.getTime();
+    return {
+      id: s.id,
+      name: s.name,
+      province: s.province,
+      branchCode: s.branchCode,
+      storeCode: s.storeCode,
+      googleMapsUrl: s.googleMapsUrl,
+      grandOpening: s.grandOpening,
+      // Falls back to the latest count on record when this week has no
+      // submission yet -- was previously `countByStore.get(s.id) ?? null`,
+      // which showed "—" for every store until someone re-entered numbers.
+      currentCount: latest?.memberCount ?? null,
+      currentCountWeekLabel:
+        latest && !isCurrentWeek
+          ? latest.weekOf.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })
+          : null,
+    };
+  });
+
+  const latestTotal = rows.reduce((s, r) => s + (r.currentCount ?? 0), 0);
+  const staleCount = rows.filter((r) => r.currentCountWeekLabel).length;
 
   return (
     <div className="flex flex-col gap-6 pt-2">
@@ -60,8 +86,11 @@ export default async function OpenChatPage() {
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-xs text-[var(--muted)]">รวมสมาชิกสัปดาห์นี้</p>
-          <p className="text-2xl font-bold">{thisWeekTotal.toLocaleString()}</p>
+          <p className="text-xs text-[var(--muted)]">รวมสมาชิกล่าสุด</p>
+          <p className="text-2xl font-bold">{latestTotal.toLocaleString()}</p>
+          {staleCount > 0 && (
+            <p className="text-xs text-[var(--muted)]">{staleCount} สาขายังใช้เลขจากสัปดาห์ก่อน</p>
+          )}
         </div>
         <div className="card p-4">
           <p className="text-xs text-[var(--muted)]">รวมสมาชิกสัปดาห์ก่อน</p>
@@ -83,7 +112,7 @@ export default async function OpenChatPage() {
                 <th className="py-2 px-3">จังหวัด</th>
                 <th className="py-2 px-3">เปิดร้าน</th>
                 <th className="py-2 px-3">แผนที่</th>
-                <th className="py-2 px-3">สมาชิกสัปดาห์นี้</th>
+                <th className="py-2 px-3">สมาชิกล่าสุด</th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +137,12 @@ export default async function OpenChatPage() {
                         "—"
                       )}
                     </td>
-                    <td className="py-2 px-3">{s.currentCount ?? "—"}</td>
+                    <td className="py-2 px-3">
+                      {s.currentCount ?? "—"}
+                      {s.currentCountWeekLabel && (
+                        <span className="text-xs text-[var(--muted)]"> ({s.currentCountWeekLabel})</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

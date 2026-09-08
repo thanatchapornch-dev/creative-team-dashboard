@@ -13,6 +13,7 @@ type StoreRow = {
   googleMapsUrl: string;
   grandOpening: string;
   currentCount: number | null;
+  currentCountWeekLabel: string | null;
 };
 
 function parseLatLng(url: string): { lat: string; lng: string } | null {
@@ -76,7 +77,7 @@ export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; 
               <th className="py-2 px-3">จังหวัด</th>
               <th className="py-2 px-3">เปิดร้าน</th>
               <th className="py-2 px-3">แผนที่</th>
-              <th className="py-2 px-3">สัปดาห์นี้ (เดิม)</th>
+              <th className="py-2 px-3">ล่าสุด (เดิม)</th>
               <th className="py-2 px-3">กรอกใหม่</th>
             </tr>
           </thead>
@@ -102,7 +103,10 @@ export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; 
                       "—"
                     )}
                   </td>
-                  <td className="py-2 px-3 text-[var(--muted)]">{s.currentCount ?? "—"}</td>
+                  <td className="py-2 px-3 text-[var(--muted)]">
+                    {s.currentCount ?? "—"}
+                    {s.currentCountWeekLabel && <span className="text-xs"> ({s.currentCountWeekLabel})</span>}
+                  </td>
                   <td className="py-2 px-3">
                     <input
                       type="number"
