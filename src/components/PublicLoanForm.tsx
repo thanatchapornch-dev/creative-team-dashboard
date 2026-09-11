@@ -3,14 +3,9 @@
 import { useMemo, useState, useTransition } from "react";
 import { createPublicLoanRequestAction } from "@/app/borrow/actions";
 import type { LoanConflict } from "@/lib/equipment";
+import { DEPARTMENTS } from "@/lib/departments";
 
 type EquipmentOption = { id: string; name: string; category: string };
-
-const DEPARTMENTS = [
-  "Site Expansion", "Site Nego", "Construction", "NSA", "Partnership", "Oper",
-  "Marketing", "COM", "SCM - TD", "SCM - CJx", "LPIC", "TD BU", "AF", "BSA",
-  "S&P", "IT Support", "People", "Legal", "Creative & Production", "อื่นๆ",
-];
 
 const CATEGORY_LABEL: Record<string, string> = {
   Camera: "กล้อง",

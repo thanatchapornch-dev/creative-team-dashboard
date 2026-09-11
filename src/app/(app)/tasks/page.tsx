@@ -36,7 +36,8 @@ export default async function MyTasksPage() {
             <div className="min-w-0">
               <p className="font-medium truncate">{t.taskCode} · {t.name}</p>
               <p className="text-xs text-[var(--muted)] truncate">
-                {t.project} · Requested by {t.requester.nickname}
+                {t.project}
+                {t.requestingDept ? ` · บรีฟโดย ${t.requestingDept}` : ""} · Requested by {t.requester.nickname}
                 {t.backup ? ` · Backup: ${t.backup.nickname}` : ""}
               </p>
               {t.brief && <p className="text-xs mt-1">{t.brief}</p>}
@@ -50,6 +51,7 @@ export default async function MyTasksPage() {
                   id: t.id,
                   name: t.name,
                   project: t.project,
+                  requestingDept: t.requestingDept,
                   ownerId: t.ownerId,
                   backupId: t.backupId,
                   priority: t.priority,

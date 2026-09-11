@@ -100,6 +100,7 @@ export default async function TeamQueuePage({
                             id: t.id,
                             name: t.name,
                             project: t.project,
+                            requestingDept: t.requestingDept,
                             ownerId: t.ownerId,
                             backupId: t.backupId,
                             priority: t.priority,
@@ -114,7 +115,10 @@ export default async function TeamQueuePage({
                           members={members}
                         />
                       </div>
-                      <p className="text-[var(--muted)]">{t.owner.nickname} · {t.project}</p>
+                      <p className="text-[var(--muted)]">
+                        {t.owner.nickname} · {t.project}
+                        {t.requestingDept ? ` · บรีฟโดย ${t.requestingDept}` : ""}
+                      </p>
                       <div className="flex items-center gap-1 flex-wrap">
                         <PriorityPill priority={t.priority} />
                         <TaskBadgePill badge={deriveTaskBadge(t.dueDate, t.status, now)} />

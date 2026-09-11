@@ -14,6 +14,7 @@ async function nextTaskCode(): Promise<string> {
 export type TaskFormInput = {
   name: string;
   project: string;
+  requestingDept?: string;
   ownerId: string;
   backupId?: string;
   priority: string;
@@ -35,6 +36,7 @@ export async function createTaskAction(input: TaskFormInput) {
       taskCode,
       name: input.name,
       project: input.project,
+      requestingDept: input.requestingDept ?? "",
       requesterId: requester.id,
       ownerId: input.ownerId,
       backupId: input.backupId || null,
@@ -105,6 +107,7 @@ export async function updateTaskAction(taskId: string, input: Partial<TaskFormIn
   const data: Record<string, unknown> = {};
   if (input.name !== undefined) data.name = input.name;
   if (input.project !== undefined) data.project = input.project;
+  if (input.requestingDept !== undefined) data.requestingDept = input.requestingDept;
   if (input.ownerId !== undefined) data.ownerId = input.ownerId;
   if (input.backupId !== undefined) data.backupId = input.backupId || null;
   if (input.priority !== undefined) data.priority = input.priority;

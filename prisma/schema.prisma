@@ -114,6 +114,7 @@ model Task {
   taskCode      String     @unique
   name          String
   project       String
+  requestingDept String    @default("")
   requesterId   String
   requester     Member     @relation("Requester", fields: [requesterId], references: [id])
   ownerId       String

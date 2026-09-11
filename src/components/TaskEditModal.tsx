@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateTaskAction } from "@/app/(app)/tasks/actions";
+import { DEPARTMENTS } from "@/lib/departments";
 
 type MemberOption = { id: string; nickname: string };
 
@@ -12,6 +13,7 @@ export type EditableTask = {
   id: string;
   name: string;
   project: string;
+  requestingDept: string;
   ownerId: string;
   backupId: string | null;
   priority: string;
@@ -51,6 +53,7 @@ export function TaskEditModal({ task, members }: { task: EditableTask; members: 
                 await updateTaskAction(task.id, {
                   name: String(fd.get("name")),
                   project: String(fd.get("project")),
+                  requestingDept: String(fd.get("requestingDept") || ""),
                   ownerId: String(fd.get("ownerId")),
                   backupId: String(fd.get("backupId") || ""),
                   priority: String(fd.get("priority")),
@@ -70,6 +73,12 @@ export function TaskEditModal({ task, members }: { task: EditableTask; members: 
             <h2 className="font-bold text-lg">Edit Task</h2>
             <input name="name" defaultValue={task.name} placeholder="Task Name" required className="input" />
             <input name="project" defaultValue={task.project} placeholder="Project / Campaign" required className="input" />
+            <select name="requestingDept" defaultValue={task.requestingDept} className="input">
+              <option value="">ทีมที่บรีฟงาน (ถ้ามี)</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <select name="ownerId" defaultValue={task.ownerId} required className="input">
                 {members.map((m) => (

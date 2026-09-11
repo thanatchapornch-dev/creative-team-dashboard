@@ -8,13 +8,18 @@ export default async function ReportsPage() {
   const yearStart = new Date(now.getFullYear(), 0, 1);
   const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
 
-  const [leaves, load, taskStats, equipmentLoans] = await Promise.all([
+  const [leaves, load, taskStats, tasksByDept, equipmentLoans] = await Promise.all([
     prisma.leaveRequest.findMany({
       where: { startDate: { gte: yearStart, lte: yearEnd } },
       include: { employee: true },
     }),
     computeTeamLoad(now),
     prisma.task.groupBy({ by: ["status"], where: { isPrivate: false }, _count: { _all: true } }),
+    prisma.task.groupBy({
+      by: ["requestingDept"],
+      where: { isPrivate: false, createdAt: { gte: yearStart, lte: yearEnd } },
+      _count: { _all: true },
+    }),
     prisma.equipmentLoan.findMany({
       where: { createdAt: { gte: yearStart, lte: yearEnd } },
       select: { createdAt: true, borrowerId: true, status: true },
@@ -45,6 +50,8 @@ export default async function ReportsPage() {
   const totalDays = approved.reduce((s, l) => s + l.leaveDays, 0);
   const avgNotice =
     leaves.length > 0 ? Math.round(leaves.reduce((s, l) => s + l.advanceNoticeDays, 0) / leaves.length) : 0;
+
+  const tasksByDeptSorted = [...tasksByDept].sort((a, b) => (b._count._all ?? 0) - (a._count._all ?? 0));
 
   const members = sortLeaderFirst(await prisma.member.findMany({ orderBy: { createdAt: "asc" } }));
   const loadByMember = new Map(load.map((l) => [l.memberId, l]));
@@ -95,6 +102,34 @@ export default async function ReportsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">
+          งานแยกตามทีมที่บรีฟ ({now.getFullYear()})
+        </h2>
+        {tasksByDeptSorted.length === 0 ? (
+          <p className="text-sm text-[var(--muted)]">ยังไม่มีงานในปีนี้</p>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-[var(--muted)]">
+                  <th className="py-2 px-3">ทีมที่บรีฟ</th>
+                  <th className="py-2 px-3">จำนวนงาน</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasksByDeptSorted.map((d) => (
+                  <tr key={d.requestingDept || "ไม่ระบุ"} className="border-t" style={{ borderColor: "var(--line)" }}>
+                    <td className="py-2 px-3 font-medium">{d.requestingDept || "ไม่ระบุ"}</td>
+                    <td className="py-2 px-3 font-semibold">{d._count._all ?? 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section>
