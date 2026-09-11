@@ -5,11 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireMember } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { parseDateOnly } from "@/lib/date-only";
-
-async function nextTaskCode(): Promise<string> {
-  const count = await prisma.task.count();
-  return `TSK-${String(count + 1).padStart(4, "0")}`;
-}
+import { nextTaskCode } from "@/lib/task-code";
 
 export type TaskFormInput = {
   name: string;
