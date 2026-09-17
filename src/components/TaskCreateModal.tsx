@@ -12,6 +12,7 @@ const PRIORITIES = ["URGENT", "HIGH", "MEDIUM", "LOW"];
 export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOption[]; defaultOwnerId?: string }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
@@ -34,26 +35,31 @@ export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOp
             className="card w-full max-w-lg p-6 flex flex-col gap-3 max-h-[85vh] overflow-y-auto"
             onSubmit={(e) => {
               e.preventDefault();
+              setError(null);
               const fd = new FormData(e.currentTarget);
               startTransition(async () => {
-                await createTaskAction({
-                  name: String(fd.get("name")),
-                  project: String(fd.get("project")),
-                  requestingDept: String(fd.get("requestingDept") || ""),
-                  ownerId: String(fd.get("ownerId")),
-                  backupId: String(fd.get("backupId") || ""),
-                  priority: String(fd.get("priority")),
-                  brief: String(fd.get("brief") || ""),
-                  startDate: String(fd.get("startDate")),
-                  dueDate: String(fd.get("dueDate")),
-                  estimatedHours: Number(fd.get("estimatedHours") || 1),
-                  notes: String(fd.get("notes") || ""),
-                  attachmentUrl: String(fd.get("attachmentUrl") || ""),
-                  isPrivate: fd.get("isPrivate") === "on",
-                });
-                setOpen(false);
-                formRef.current?.reset();
-                router.refresh();
+                try {
+                  await createTaskAction({
+                    name: String(fd.get("name")),
+                    project: String(fd.get("project")),
+                    requestingDept: String(fd.get("requestingDept") || ""),
+                    ownerId: String(fd.get("ownerId")),
+                    backupId: String(fd.get("backupId") || ""),
+                    priority: String(fd.get("priority")),
+                    brief: String(fd.get("brief") || ""),
+                    startDate: String(fd.get("startDate")),
+                    dueDate: String(fd.get("dueDate")),
+                    estimatedHours: Number(fd.get("estimatedHours") || 1),
+                    notes: String(fd.get("notes") || ""),
+                    attachmentUrl: String(fd.get("attachmentUrl") || ""),
+                    isPrivate: fd.get("isPrivate") === "on",
+                  });
+                  setOpen(false);
+                  formRef.current?.reset();
+                  router.refresh();
+                } catch {
+                  setError("สร้างงานไม่สำเร็จ เชื่อมต่อไม่ได้หรือมีปัญหาชั่วคราว — ลองใหม่อีกครั้ง");
+                }
               });
             }}
           >
@@ -105,6 +111,12 @@ export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOp
               <input name="isPrivate" type="checkbox" />
               🔒 ส่วนตัว — เฉพาะเจ้าของงานเห็น (ไม่แสดงใน Team Queue ของคนอื่น)
             </label>
+
+            {error && (
+              <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+                ⚠️ {error}
+              </p>
+            )}
 
             <div className="flex justify-end gap-2 mt-2">
               <button type="button" onClick={() => setOpen(false)} className="rounded-full px-4 py-2 text-sm font-medium">

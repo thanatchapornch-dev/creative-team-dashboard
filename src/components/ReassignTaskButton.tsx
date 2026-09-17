@@ -13,6 +13,7 @@ export function ReassignTaskButton({
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   if (!open) {
@@ -24,26 +25,34 @@ export function ReassignTaskButton({
   }
 
   return (
-    <select
-      autoFocus
-      disabled={pending}
-      defaultValue=""
-      onChange={(e) => {
-        const newOwnerId = e.target.value;
-        if (!newOwnerId) return;
-        startTransition(async () => {
-          await reassignTaskAction(taskId, newOwnerId);
-          setOpen(false);
-          router.refresh();
-        });
-      }}
-      className="text-xs rounded-lg border px-2 py-1"
-      style={{ borderColor: "var(--line)" }}
-    >
-      <option value="" disabled>Reassign to…</option>
-      {candidates.map((c) => (
-        <option key={c.id} value={c.id}>{c.nickname}</option>
-      ))}
-    </select>
+    <div className="flex flex-col gap-1">
+      <select
+        autoFocus
+        disabled={pending}
+        defaultValue=""
+        onChange={(e) => {
+          const newOwnerId = e.target.value;
+          if (!newOwnerId) return;
+          setError(null);
+          startTransition(async () => {
+            try {
+              await reassignTaskAction(taskId, newOwnerId);
+              setOpen(false);
+              router.refresh();
+            } catch {
+              setError("มอบหมายงานไม่สำเร็จ ลองใหม่อีกครั้ง");
+            }
+          });
+        }}
+        className="text-xs rounded-lg border px-2 py-1"
+        style={{ borderColor: "var(--line)" }}
+      >
+        <option value="" disabled>Reassign to…</option>
+        {candidates.map((c) => (
+          <option key={c.id} value={c.id}>{c.nickname}</option>
+        ))}
+      </select>
+      {error && <p className="text-xs" style={{ color: "#a12b2b" }}>⚠️ {error}</p>}
+    </div>
   );
 }

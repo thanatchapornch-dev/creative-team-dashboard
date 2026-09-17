@@ -47,19 +47,30 @@ export async function createTaskAction(input: TaskFormInput) {
     },
   });
 
-  await notify({
-    recipientId: task.ownerId,
-    type: "TASK_ASSIGNED",
-    title: `New Task: ${task.name}`,
-    body: `${requester.nickname} assigned "${task.name}" (${task.project}) to you. Due ${task.dueDate.toDateString()}.`,
-    relatedType: "Task",
-    relatedId: task.id,
-    sendEmail: true,
-  });
+  // The task is already committed at this point — nothing below may throw
+  // and hide that success from whoever just created it.
+  try {
+    await notify({
+      recipientId: task.ownerId,
+      type: "TASK_ASSIGNED",
+      title: `New Task: ${task.name}`,
+      body: `${requester.nickname} assigned "${task.name}" (${task.project}) to you. Due ${task.dueDate.toDateString()}.`,
+      relatedType: "Task",
+      relatedId: task.id,
+      sendEmail: true,
+    });
+  } catch (err) {
+    console.error("notify owner failed for new task", task.id, err);
+  }
 
-  revalidatePath("/tasks");
-  revalidatePath("/team-queue");
-  revalidatePath("/dashboard");
+  try {
+    revalidatePath("/tasks");
+    revalidatePath("/team-queue");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    console.error("revalidatePath failed for new task", task.id, err);
+  }
+
   return task;
 }
 
@@ -72,9 +83,15 @@ export async function updateTaskStatusAction(taskId: string, status: string) {
       completedAt: status === "DONE" ? new Date() : null,
     },
   });
-  revalidatePath("/tasks");
-  revalidatePath("/team-queue");
-  revalidatePath("/dashboard");
+
+  try {
+    revalidatePath("/tasks");
+    revalidatePath("/team-queue");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    console.error("revalidatePath failed for task status update", task.id, err);
+  }
+
   return task;
 }
 
@@ -82,19 +99,28 @@ export async function reassignTaskAction(taskId: string, newOwnerId: string) {
   const actor = await requireMember();
   const task = await prisma.task.update({ where: { id: taskId }, data: { ownerId: newOwnerId } });
 
-  await notify({
-    recipientId: newOwnerId,
-    type: "TASK_ASSIGNED",
-    title: `Task reassigned to you: ${task.name}`,
-    body: `${actor.nickname} reassigned "${task.name}" (${task.project}) to you. Due ${task.dueDate.toDateString()}.`,
-    relatedType: "Task",
-    relatedId: task.id,
-    sendEmail: true,
-  });
+  try {
+    await notify({
+      recipientId: newOwnerId,
+      type: "TASK_ASSIGNED",
+      title: `Task reassigned to you: ${task.name}`,
+      body: `${actor.nickname} reassigned "${task.name}" (${task.project}) to you. Due ${task.dueDate.toDateString()}.`,
+      relatedType: "Task",
+      relatedId: task.id,
+      sendEmail: true,
+    });
+  } catch (err) {
+    console.error("notify new owner failed for task reassign", task.id, err);
+  }
 
-  revalidatePath("/tasks");
-  revalidatePath("/team-queue");
-  revalidatePath("/dashboard");
+  try {
+    revalidatePath("/tasks");
+    revalidatePath("/team-queue");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    console.error("revalidatePath failed for task reassign", task.id, err);
+  }
+
   return task;
 }
 
@@ -116,8 +142,14 @@ export async function updateTaskAction(taskId: string, input: Partial<TaskFormIn
   if (input.isPrivate !== undefined) data.isPrivate = input.isPrivate;
 
   const task = await prisma.task.update({ where: { id: taskId }, data });
-  revalidatePath("/tasks");
-  revalidatePath("/team-queue");
-  revalidatePath("/dashboard");
+
+  try {
+    revalidatePath("/tasks");
+    revalidatePath("/team-queue");
+    revalidatePath("/dashboard");
+  } catch (err) {
+    console.error("revalidatePath failed for task update", task.id, err);
+  }
+
   return task;
 }
