@@ -28,6 +28,7 @@ type Member = { id: string; nickname: string; name: string };
 export function LogLeaveForTeamForm({ members }: { members: Member[] }) {
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -63,14 +64,24 @@ export function LogLeaveForTeamForm({ members }: { members: Member[] }) {
       style={{ borderColor: "var(--lime)" }}
       onSubmit={(e) => {
         e.preventDefault();
+        setError(null);
         startTransition(async () => {
-          await logApprovedLeaveAction({ employeeId, leaveType, startDate, endDate, note });
-          setDone(true);
-          setPasteText("");
-          setParsedNote(null);
-          setNote("");
-          setEmployeeId("");
-          router.refresh();
+          try {
+            await logApprovedLeaveAction({ employeeId, leaveType, startDate, endDate, note });
+            setDone(true);
+            setPasteText("");
+            setParsedNote(null);
+            setNote("");
+            setEmployeeId("");
+            router.refresh();
+          } catch (err) {
+            if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+              setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+              setTimeout(() => router.push("/login"), 1500);
+              return;
+            }
+            setError("บันทึกการลาไม่สำเร็จ ลองใหม่อีกครั้ง");
+          }
         });
       }}
     >
@@ -150,6 +161,11 @@ export function LogLeaveForTeamForm({ members }: { members: Member[] }) {
       {done && (
         <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#eefbe0", color: "#3c6b0f" }}>
           ✅ บันทึกแล้ว ทีมจะเห็นใน Calendar ทันที
+        </p>
+      )}
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
         </p>
       )}
 

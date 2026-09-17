@@ -14,6 +14,7 @@ export function CompanySettingsForm({ settings }: { settings: ResolvedSettings }
   const [newHoliday, setNewHoliday] = useState("");
   const [theme, setTheme] = useState(settings.themeColors);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   function toggleDay(day: string) {
@@ -25,19 +26,29 @@ export function CompanySettingsForm({ settings }: { settings: ResolvedSettings }
       className="card p-5 flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
+        setError(null);
         const fd = new FormData(e.currentTarget);
         startTransition(async () => {
-          await updateCompanySettingsAction({
-            companyName: String(fd.get("companyName")),
-            workingDays,
-            holidays,
-            annualLeaveNoticeDays: Number(fd.get("annualLeaveNoticeDays")),
-            approvalSlaDays: Number(fd.get("approvalSlaDays")),
-            taskReminderDaysBefore: Number(fd.get("taskReminderDaysBefore")),
-            themeColors: theme,
-          });
-          setSaved(true);
-          router.refresh();
+          try {
+            await updateCompanySettingsAction({
+              companyName: String(fd.get("companyName")),
+              workingDays,
+              holidays,
+              annualLeaveNoticeDays: Number(fd.get("annualLeaveNoticeDays")),
+              approvalSlaDays: Number(fd.get("approvalSlaDays")),
+              taskReminderDaysBefore: Number(fd.get("taskReminderDaysBefore")),
+              themeColors: theme,
+            });
+            setSaved(true);
+            router.refresh();
+          } catch (err) {
+            if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+              setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+              setTimeout(() => router.push("/login"), 1500);
+              return;
+            }
+            setError("บันทึกการตั้งค่าไม่สำเร็จ ลองใหม่อีกครั้ง");
+          }
         });
       }}
     >
@@ -129,6 +140,11 @@ export function CompanySettingsForm({ settings }: { settings: ResolvedSettings }
       </div>
 
       {saved && <p className="text-sm" style={{ color: "#3c6b0f" }}>✅ Saved</p>}
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
+        </p>
+      )}
 
       <button
         type="submit"

@@ -26,6 +26,7 @@ export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; 
   const [search, setSearch] = useState("");
   const [pending, startTransition] = useTransition();
   const [savedMsg, setSavedMsg] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const filtered = useMemo(() => {
@@ -40,11 +41,21 @@ export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; 
       .filter(([, v]) => v !== "" && !Number.isNaN(Number(v)))
       .map(([storeId, v]) => ({ storeId, memberCount: Number(v) }));
     if (entries.length === 0) return;
+    setError("");
     startTransition(async () => {
-      const result = await saveOpenChatCountsAction(entries);
-      setSavedMsg(`บันทึกแล้ว ${result.saved} สาขา`);
-      setValues({});
-      router.refresh();
+      try {
+        const result = await saveOpenChatCountsAction(entries);
+        setSavedMsg(`บันทึกแล้ว ${result.saved} สาขา`);
+        setValues({});
+        router.refresh();
+      } catch (err) {
+        if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+          setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+          setTimeout(() => router.push("/login"), 1500);
+          return;
+        }
+        setError("บันทึกจำนวนสมาชิกไม่สำเร็จ ลองใหม่อีกครั้ง");
+      }
     });
   }
 
@@ -66,6 +77,11 @@ export function OpenChatCountsForm({ stores, weekLabel }: { stores: StoreRow[]; 
       {savedMsg && (
         <p className="text-sm rounded-lg px-3 py-2 w-fit" style={{ background: "#eefbe0", color: "#3c6b0f" }}>
           ✅ {savedMsg}
+        </p>
+      )}
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2 w-fit" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
         </p>
       )}
 

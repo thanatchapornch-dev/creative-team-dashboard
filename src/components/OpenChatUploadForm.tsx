@@ -40,12 +40,22 @@ export function OpenChatUploadForm() {
 
   function handleConfirm() {
     if (!preview) return;
+    setError("");
     startTransition(async () => {
-      const r = await commitOpenChatUploadAction(preview);
-      setResult(`บันทึกแล้ว ${r.upserts} รายการ`);
-      setPreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      router.refresh();
+      try {
+        const r = await commitOpenChatUploadAction(preview);
+        setResult(`บันทึกแล้ว ${r.upserts} รายการ`);
+        setPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        router.refresh();
+      } catch (err) {
+        if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+          setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+          setTimeout(() => router.push("/login"), 1500);
+          return;
+        }
+        setError("บันทึกข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง");
+      }
     });
   }
 

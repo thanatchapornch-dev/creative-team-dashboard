@@ -19,6 +19,7 @@ export function LeaveRequestForm() {
   const [warning, setWarning] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -27,18 +28,28 @@ export function LeaveRequestForm() {
       className="card p-5 flex flex-col gap-3"
       onSubmit={(e) => {
         e.preventDefault();
+        setError(null);
         const fd = new FormData(e.currentTarget);
         startTransition(async () => {
-          const result = await submitLeaveAction({
-            leaveType: String(fd.get("leaveType")),
-            startDate: String(fd.get("startDate")),
-            endDate: String(fd.get("endDate")),
-            reason: String(fd.get("reason")),
-          });
-          setWarning(result.warning);
-          setDone(true);
-          setReason("");
-          router.refresh();
+          try {
+            const result = await submitLeaveAction({
+              leaveType: String(fd.get("leaveType")),
+              startDate: String(fd.get("startDate")),
+              endDate: String(fd.get("endDate")),
+              reason: String(fd.get("reason")),
+            });
+            setWarning(result.warning);
+            setDone(true);
+            setReason("");
+            router.refresh();
+          } catch (err) {
+            if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+              setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+              setTimeout(() => router.push("/login"), 1500);
+              return;
+            }
+            setError("ส่งคำขอลาไม่สำเร็จ ลองใหม่อีกครั้ง");
+          }
         });
       }}
     >
@@ -89,6 +100,11 @@ export function LeaveRequestForm() {
       {done && !warning && (
         <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#eefbe0", color: "#3c6b0f" }}>
           ✅ ส่งคำขอลาเรียบร้อย รออนุมัติ
+        </p>
+      )}
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
         </p>
       )}
 

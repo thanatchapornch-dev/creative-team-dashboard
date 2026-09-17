@@ -20,7 +20,17 @@ function MemberRowEditor({ member }: { member: MemberRow }) {
   const [pending, startTransition] = useTransition();
   const [pinValue, setPinValue] = useState("");
   const [pinMsg, setPinMsg] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  function handleAuthError(err: unknown, fallbackMsg: string) {
+    if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+      setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+      setTimeout(() => router.push("/login"), 1500);
+      return;
+    }
+    setError(fallbackMsg);
+  }
 
   return (
     <div className="flex items-center gap-3 py-3 border-b flex-wrap" style={{ borderColor: "var(--line)" }}>
@@ -31,13 +41,18 @@ function MemberRowEditor({ member }: { member: MemberRow }) {
         defaultValue={member.role}
         disabled={pending}
         onChange={(e) => {
+          setError(null);
           startTransition(async () => {
-            await updateMemberAdminAction(member.id, {
-              role: e.target.value,
-              workEmail: member.workEmail,
-              dailyCapacityHours: member.dailyCapacityHours,
-            });
-            router.refresh();
+            try {
+              await updateMemberAdminAction(member.id, {
+                role: e.target.value,
+                workEmail: member.workEmail,
+                dailyCapacityHours: member.dailyCapacityHours,
+              });
+              router.refresh();
+            } catch (err) {
+              handleAuthError(err, "เปลี่ยน Role ไม่สำเร็จ ลองใหม่อีกครั้ง");
+            }
           });
         }}
         className="input w-28"
@@ -51,13 +66,18 @@ function MemberRowEditor({ member }: { member: MemberRow }) {
         disabled={pending}
         onBlur={(e) => {
           if (e.target.value === member.workEmail) return;
+          setError(null);
           startTransition(async () => {
-            await updateMemberAdminAction(member.id, {
-              role: member.role,
-              workEmail: e.target.value,
-              dailyCapacityHours: member.dailyCapacityHours,
-            });
-            router.refresh();
+            try {
+              await updateMemberAdminAction(member.id, {
+                role: member.role,
+                workEmail: e.target.value,
+                dailyCapacityHours: member.dailyCapacityHours,
+              });
+              router.refresh();
+            } catch (err) {
+              handleAuthError(err, "บันทึกอีเมลไม่สำเร็จ ลองใหม่อีกครั้ง");
+            }
           });
         }}
         className="input flex-1 min-w-[180px]"
@@ -72,13 +92,18 @@ function MemberRowEditor({ member }: { member: MemberRow }) {
         onBlur={(e) => {
           const val = Number(e.target.value);
           if (val === member.dailyCapacityHours) return;
+          setError(null);
           startTransition(async () => {
-            await updateMemberAdminAction(member.id, {
-              role: member.role,
-              workEmail: member.workEmail,
-              dailyCapacityHours: val,
-            });
-            router.refresh();
+            try {
+              await updateMemberAdminAction(member.id, {
+                role: member.role,
+                workEmail: member.workEmail,
+                dailyCapacityHours: val,
+              });
+              router.refresh();
+            } catch (err) {
+              handleAuthError(err, "บันทึกชั่วโมงทำงานไม่สำเร็จ ลองใหม่อีกครั้ง");
+            }
           });
         }}
         className="input w-20"
@@ -97,10 +122,15 @@ function MemberRowEditor({ member }: { member: MemberRow }) {
           type="button"
           disabled={pending || pinValue.length < 4}
           onClick={() => {
+            setError(null);
             startTransition(async () => {
-              await resetPinAction(member.id, pinValue);
-              setPinMsg("Reset ✅");
-              setPinValue("");
+              try {
+                await resetPinAction(member.id, pinValue);
+                setPinMsg("Reset ✅");
+                setPinValue("");
+              } catch (err) {
+                handleAuthError(err, "รีเซ็ต PIN ไม่สำเร็จ ลองใหม่อีกครั้ง");
+              }
             });
           }}
           className="text-xs font-semibold rounded-full px-2 py-1.5"
@@ -110,6 +140,8 @@ function MemberRowEditor({ member }: { member: MemberRow }) {
         </button>
         {pinMsg && <span className="text-xs" style={{ color: "#3c6b0f" }}>{pinMsg}</span>}
       </div>
+
+      {error && <p className="text-xs w-full" style={{ color: "#a12b2b" }}>⚠️ {error}</p>}
 
       <style jsx>{`
         .input {

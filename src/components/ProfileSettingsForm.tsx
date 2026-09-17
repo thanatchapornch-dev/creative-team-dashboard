@@ -21,6 +21,7 @@ export function ProfileSettingsForm({
   const [pictureUrl, setPictureUrl] = useState(member.profilePictureUrl);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -41,17 +42,27 @@ export function ProfileSettingsForm({
       className="card p-5 flex flex-col gap-3"
       onSubmit={(e) => {
         e.preventDefault();
+        setError(null);
         const fd = new FormData(e.currentTarget);
         startTransition(async () => {
-          await updateProfileAction({
-            nickname: String(fd.get("nickname")),
-            position: String(fd.get("position")),
-            workEmail: String(fd.get("workEmail")),
-            statusToday: String(fd.get("statusToday")),
-            profilePictureUrl: pictureUrl,
-          });
-          setSaved(true);
-          router.refresh();
+          try {
+            await updateProfileAction({
+              nickname: String(fd.get("nickname")),
+              position: String(fd.get("position")),
+              workEmail: String(fd.get("workEmail")),
+              statusToday: String(fd.get("statusToday")),
+              profilePictureUrl: pictureUrl,
+            });
+            setSaved(true);
+            router.refresh();
+          } catch (err) {
+            if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+              setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+              setTimeout(() => router.push("/login"), 1500);
+              return;
+            }
+            setError("บันทึกโปรไฟล์ไม่สำเร็จ ลองใหม่อีกครั้ง");
+          }
         });
       }}
     >
@@ -93,6 +104,11 @@ export function ProfileSettingsForm({
       </label>
 
       {saved && <p className="text-sm" style={{ color: "#3c6b0f" }}>✅ Saved</p>}
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
+        </p>
+      )}
 
       <button
         type="submit"

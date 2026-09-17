@@ -46,22 +46,32 @@ export async function submitLeaveAction(input: LeaveFormInput) {
   const approvers = await prisma.member.findMany({ where: { role: { in: ["LEADER", "ADMIN"] } } });
   const isUrgent = input.leaveType === "URGENT";
 
+  // The leave request is already committed at this point — nothing below may
+  // throw and hide that success from the employee who just submitted it.
   for (const approver of approvers) {
-    await notify({
-      recipientId: approver.id,
-      type: isUrgent ? "LEAVE_URGENT" : "LEAVE_SUBMITTED",
-      title: isUrgent ? `🚨 Urgent Leave: ${employee.nickname}` : `Leave Approval Required: ${employee.nickname}`,
-      body: `${employee.nickname} requested ${input.leaveType} leave, ${leaveDays} day(s), ${start.toDateString()}–${end.toDateString()}. Approve within ${settings.approvalSlaDays} days.`,
-      relatedType: "LeaveRequest",
-      relatedId: leave.id,
-      sendEmail: true,
-    });
+    try {
+      await notify({
+        recipientId: approver.id,
+        type: isUrgent ? "LEAVE_URGENT" : "LEAVE_SUBMITTED",
+        title: isUrgent ? `🚨 Urgent Leave: ${employee.nickname}` : `Leave Approval Required: ${employee.nickname}`,
+        body: `${employee.nickname} requested ${input.leaveType} leave, ${leaveDays} day(s), ${start.toDateString()}–${end.toDateString()}. Approve within ${settings.approvalSlaDays} days.`,
+        relatedType: "LeaveRequest",
+        relatedId: leave.id,
+        sendEmail: true,
+      });
+    } catch (err) {
+      console.error("notify approver failed for leave request", leave.id, approver.id, err);
+    }
   }
 
-  revalidatePath("/leave");
-  revalidatePath("/approval");
-  revalidatePath("/dashboard");
-  revalidatePath("/calendar");
+  try {
+    revalidatePath("/leave");
+    revalidatePath("/approval");
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
+  } catch (err) {
+    console.error("revalidatePath failed for leave request", leave.id, err);
+  }
 
   return { leave, warning };
 }
@@ -107,60 +117,22 @@ export async function logApprovedLeaveAction(input: LogLeaveInput) {
     include: { employee: true },
   });
 
-  await notify({
-    recipientId: leave.employeeId,
-    type: "LEAVE_APPROVED",
-    title: "Leave Logged",
-    body: `${approver.nickname} บันทึกวันลาของคุณ (${leave.leaveType}) ${start.toDateString()}–${end.toDateString()} ลงในแดชบอร์ดแล้ว`,
-    relatedType: "LeaveRequest",
-    relatedId: leave.id,
-  });
-
-  const impacted = await prisma.task.findMany({
-    where: {
-      ownerId: leave.employeeId,
-      status: { notIn: ["DONE"] },
-      startDate: { lte: leave.endDate },
-      dueDate: { gte: leave.startDate },
-    },
-  });
-  if (impacted.length > 0) {
+  // The leave is already logged at this point — nothing below may throw and
+  // hide that success from the DN/Admin who just logged it.
+  try {
     await notify({
-      recipientId: approver.id,
-      type: "LEAVE_IMPACT",
-      title: `LEAVE IMPACT: ${leave.employee.nickname}`,
-      body: `${leave.employee.nickname} is on leave ${leave.startDate.toDateString()}–${leave.endDate.toDateString()}. ${impacted.length} open task(s) may need reassignment.`,
+      recipientId: leave.employeeId,
+      type: "LEAVE_APPROVED",
+      title: "Leave Logged",
+      body: `${approver.nickname} บันทึกวันลาของคุณ (${leave.leaveType}) ${start.toDateString()}–${end.toDateString()} ลงในแดชบอร์ดแล้ว`,
       relatedType: "LeaveRequest",
       relatedId: leave.id,
     });
+  } catch (err) {
+    console.error("notify employee failed for logged leave", leave.id, err);
   }
 
-  revalidatePath("/leave");
-  revalidatePath("/approval");
-  revalidatePath("/dashboard");
-  revalidatePath("/calendar");
-  return leave;
-}
-
-export async function decideLeaveAction(leaveId: string, decision: "APPROVED" | "REJECTED") {
-  const approver = await requireRole(["LEADER", "ADMIN"]);
-  const leave = await prisma.leaveRequest.update({
-    where: { id: leaveId },
-    data: { status: decision, approverId: approver.id, decidedAt: new Date() },
-    include: { employee: true },
-  });
-
-  await notify({
-    recipientId: leave.employeeId,
-    type: decision === "APPROVED" ? "LEAVE_APPROVED" : "LEAVE_REJECTED",
-    title: decision === "APPROVED" ? "Leave Approved" : "Leave Rejected",
-    body: `Your ${leave.leaveType} leave (${leave.startDate.toDateString()}–${leave.endDate.toDateString()}) was ${decision.toLowerCase()} by ${approver.nickname}.`,
-    relatedType: "LeaveRequest",
-    relatedId: leave.id,
-    sendEmail: true,
-  });
-
-  if (decision === "APPROVED") {
+  try {
     const impacted = await prisma.task.findMany({
       where: {
         ownerId: leave.employeeId,
@@ -177,14 +149,80 @@ export async function decideLeaveAction(leaveId: string, decision: "APPROVED" | 
         body: `${leave.employee.nickname} is on leave ${leave.startDate.toDateString()}–${leave.endDate.toDateString()}. ${impacted.length} open task(s) may need reassignment.`,
         relatedType: "LeaveRequest",
         relatedId: leave.id,
-        sendEmail: true,
       });
+    }
+  } catch (err) {
+    console.error("notify impact failed for logged leave", leave.id, err);
+  }
+
+  try {
+    revalidatePath("/leave");
+    revalidatePath("/approval");
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
+  } catch (err) {
+    console.error("revalidatePath failed for logged leave", leave.id, err);
+  }
+  return leave;
+}
+
+export async function decideLeaveAction(leaveId: string, decision: "APPROVED" | "REJECTED") {
+  const approver = await requireRole(["LEADER", "ADMIN"]);
+  const leave = await prisma.leaveRequest.update({
+    where: { id: leaveId },
+    data: { status: decision, approverId: approver.id, decidedAt: new Date() },
+    include: { employee: true },
+  });
+
+  // The decision is already committed at this point — nothing below may
+  // throw and hide that success from the approver who just decided it.
+  try {
+    await notify({
+      recipientId: leave.employeeId,
+      type: decision === "APPROVED" ? "LEAVE_APPROVED" : "LEAVE_REJECTED",
+      title: decision === "APPROVED" ? "Leave Approved" : "Leave Rejected",
+      body: `Your ${leave.leaveType} leave (${leave.startDate.toDateString()}–${leave.endDate.toDateString()}) was ${decision.toLowerCase()} by ${approver.nickname}.`,
+      relatedType: "LeaveRequest",
+      relatedId: leave.id,
+      sendEmail: true,
+    });
+  } catch (err) {
+    console.error("notify employee failed for leave decision", leave.id, err);
+  }
+
+  if (decision === "APPROVED") {
+    try {
+      const impacted = await prisma.task.findMany({
+        where: {
+          ownerId: leave.employeeId,
+          status: { notIn: ["DONE"] },
+          startDate: { lte: leave.endDate },
+          dueDate: { gte: leave.startDate },
+        },
+      });
+      if (impacted.length > 0) {
+        await notify({
+          recipientId: approver.id,
+          type: "LEAVE_IMPACT",
+          title: `LEAVE IMPACT: ${leave.employee.nickname}`,
+          body: `${leave.employee.nickname} is on leave ${leave.startDate.toDateString()}–${leave.endDate.toDateString()}. ${impacted.length} open task(s) may need reassignment.`,
+          relatedType: "LeaveRequest",
+          relatedId: leave.id,
+          sendEmail: true,
+        });
+      }
+    } catch (err) {
+      console.error("notify impact failed for leave decision", leave.id, err);
     }
   }
 
-  revalidatePath("/leave");
-  revalidatePath("/approval");
-  revalidatePath("/dashboard");
-  revalidatePath("/calendar");
+  try {
+    revalidatePath("/leave");
+    revalidatePath("/approval");
+    revalidatePath("/dashboard");
+    revalidatePath("/calendar");
+  } catch (err) {
+    console.error("revalidatePath failed for leave decision", leave.id, err);
+  }
   return leave;
 }

@@ -25,7 +25,11 @@ export async function saveOpenChatCountsAction(entries: OpenChatEntry[]) {
     });
   }
 
-  revalidatePath("/openchat");
+  try {
+    revalidatePath("/openchat");
+  } catch (err) {
+    console.error("revalidatePath failed for openchat counts save", err);
+  }
   return { saved: entries.length, weekOf: weekOf.toISOString() };
 }
 
@@ -59,6 +63,10 @@ export async function commitOpenChatUploadAction(preview: OpenChatUploadPreview)
     }
   }
 
-  revalidatePath("/openchat");
+  try {
+    revalidatePath("/openchat");
+  } catch (err) {
+    console.error("revalidatePath failed for openchat upload commit", err);
+  }
   return { upserts };
 }

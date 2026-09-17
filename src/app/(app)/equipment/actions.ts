@@ -95,16 +95,28 @@ export async function cancelLoanAction(loanId: string) {
 export async function addEquipmentItemAction(input: { name: string; category: string }) {
   await requireRole(["LEADER", "ADMIN"]);
   const maxSort = await prisma.equipmentItem.aggregate({ _max: { sortOrder: true } });
-  await prisma.equipmentItem.create({
+  const item = await prisma.equipmentItem.create({
     data: { name: input.name, category: input.category, sortOrder: (maxSort._max.sortOrder ?? 0) + 1 },
   });
-  revalidatePath("/equipment");
-  revalidatePath("/settings");
+
+  // The item is already committed at this point — nothing below may throw
+  // and hide that success from whoever just added it.
+  try {
+    revalidatePath("/equipment");
+    revalidatePath("/settings");
+  } catch (err) {
+    console.error("revalidatePath failed for new equipment item", item.id, err);
+  }
 }
 
 export async function setEquipmentItemActiveAction(itemId: string, active: boolean) {
   await requireRole(["LEADER", "ADMIN"]);
   await prisma.equipmentItem.update({ where: { id: itemId }, data: { active } });
-  revalidatePath("/equipment");
-  revalidatePath("/settings");
+
+  try {
+    revalidatePath("/equipment");
+    revalidatePath("/settings");
+  } catch (err) {
+    console.error("revalidatePath failed for equipment item active toggle", itemId, err);
+  }
 }

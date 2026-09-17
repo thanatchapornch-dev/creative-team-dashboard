@@ -37,12 +37,22 @@ export function StoreUploadForm() {
 
   function handleConfirm() {
     if (!preview) return;
+    setError("");
     startTransition(async () => {
-      const r = await commitStoreUploadAction(preview);
-      setResult(`เพิ่มสาขาใหม่ ${r.created} สาขา, อัปเดต ${r.updated} สาขา`);
-      setPreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      router.refresh();
+      try {
+        const r = await commitStoreUploadAction(preview);
+        setResult(`เพิ่มสาขาใหม่ ${r.created} สาขา, อัปเดต ${r.updated} สาขา`);
+        setPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        router.refresh();
+      } catch (err) {
+        if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+          setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+          setTimeout(() => router.push("/login"), 1500);
+          return;
+        }
+        setError("บันทึกข้อมูลสาขาไม่สำเร็จ ลองใหม่อีกครั้ง");
+      }
     });
   }
 

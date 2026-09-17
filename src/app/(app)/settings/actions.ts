@@ -24,7 +24,12 @@ export async function updateProfileAction(input: {
       ...(input.profilePictureUrl !== undefined ? { profilePictureUrl: input.profilePictureUrl } : {}),
     },
   });
-  revalidatePath("/", "layout");
+
+  try {
+    revalidatePath("/", "layout");
+  } catch (err) {
+    console.error("revalidatePath failed for profile update", member.id, err);
+  }
 }
 
 export async function updateCompanySettingsAction(input: {
@@ -38,7 +43,12 @@ export async function updateCompanySettingsAction(input: {
 }) {
   await requireRole(["LEADER", "ADMIN"]);
   await updateSettings(input);
-  revalidatePath("/", "layout");
+
+  try {
+    revalidatePath("/", "layout");
+  } catch (err) {
+    console.error("revalidatePath failed for company settings update", err);
+  }
 }
 
 export async function updateMemberAdminAction(
@@ -54,7 +64,12 @@ export async function updateMemberAdminAction(
       dailyCapacityHours: input.dailyCapacityHours,
     },
   });
-  revalidatePath("/", "layout");
+
+  try {
+    revalidatePath("/", "layout");
+  } catch (err) {
+    console.error("revalidatePath failed for member admin update", memberId, err);
+  }
 }
 
 export async function resetPinAction(memberId: string, newPin: string) {
@@ -99,6 +114,10 @@ export async function commitStoreUploadAction(preview: StoreUploadPreview) {
     }
   }
 
-  revalidatePath("/", "layout");
+  try {
+    revalidatePath("/", "layout");
+  } catch (err) {
+    console.error("revalidatePath failed for store upload commit", err);
+  }
   return { created, updated };
 }

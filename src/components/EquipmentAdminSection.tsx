@@ -10,23 +10,44 @@ export function EquipmentAdminSection({ items }: { items: Item[] }) {
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
+    setError(null);
     startTransition(async () => {
-      await addEquipmentItemAction({ name: name.trim(), category: category.trim() || "อื่นๆ" });
-      setName("");
-      setCategory("");
-      router.refresh();
+      try {
+        await addEquipmentItemAction({ name: name.trim(), category: category.trim() || "อื่นๆ" });
+        setName("");
+        setCategory("");
+        router.refresh();
+      } catch (err) {
+        if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+          setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+          setTimeout(() => router.push("/login"), 1500);
+          return;
+        }
+        setError("เพิ่มอุปกรณ์ไม่สำเร็จ ลองใหม่อีกครั้ง");
+      }
     });
   }
 
   function toggleActive(id: string, active: boolean) {
+    setError(null);
     startTransition(async () => {
-      await setEquipmentItemActiveAction(id, active);
-      router.refresh();
+      try {
+        await setEquipmentItemActiveAction(id, active);
+        router.refresh();
+      } catch (err) {
+        if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+          setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+          setTimeout(() => router.push("/login"), 1500);
+          return;
+        }
+        setError("เปลี่ยนสถานะอุปกรณ์ไม่สำเร็จ ลองใหม่อีกครั้ง");
+      }
     });
   }
 
@@ -74,6 +95,12 @@ export function EquipmentAdminSection({ items }: { items: Item[] }) {
           เพิ่ม
         </button>
       </form>
+
+      {error && (
+        <p className="text-sm rounded-lg px-3 py-2" style={{ background: "#fdeaea", color: "#a12b2b" }}>
+          ⚠️ {error}
+        </p>
+      )}
 
       <style jsx>{`
         .input {
