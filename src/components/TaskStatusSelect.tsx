@@ -23,7 +23,12 @@ export function TaskStatusSelect({ taskId, status }: { taskId: string; status: s
             try {
               await updateTaskStatusAction(taskId, next);
               router.refresh();
-            } catch {
+            } catch (err) {
+              if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+                setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่");
+                setTimeout(() => router.push("/login"), 1500);
+                return;
+              }
               setError("อัปเดทสถานะไม่สำเร็จ ลองใหม่อีกครั้ง");
             }
           });

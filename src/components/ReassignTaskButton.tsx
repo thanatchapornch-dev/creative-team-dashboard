@@ -39,7 +39,12 @@ export function ReassignTaskButton({
               await reassignTaskAction(taskId, newOwnerId);
               setOpen(false);
               router.refresh();
-            } catch {
+            } catch (err) {
+              if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+                setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่");
+                setTimeout(() => router.push("/login"), 1500);
+                return;
+              }
               setError("มอบหมายงานไม่สำเร็จ ลองใหม่อีกครั้ง");
             }
           });

@@ -57,8 +57,13 @@ export function TaskCreateModal({ members, defaultOwnerId }: { members: MemberOp
                   setOpen(false);
                   formRef.current?.reset();
                   router.refresh();
-                } catch {
-                  setError("สร้างงานไม่สำเร็จ เชื่อมต่อไม่ได้หรือมีปัญหาชั่วคราว — ลองใหม่อีกครั้ง");
+                } catch (err) {
+                  if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+                    setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+                    setTimeout(() => router.push("/login"), 1500);
+                  } else {
+                    setError("สร้างงานไม่สำเร็จ เชื่อมต่อไม่ได้หรือมีปัญหาชั่วคราว — ลองใหม่อีกครั้ง");
+                  }
                 }
               });
             }}

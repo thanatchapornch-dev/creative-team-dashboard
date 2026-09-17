@@ -70,7 +70,12 @@ export function TaskEditModal({ task, members }: { task: EditableTask; members: 
                   });
                   setOpen(false);
                   router.refresh();
-                } catch {
+                } catch (err) {
+                  if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+                    setError("เซสชันหมดอายุ กรุณาล็อกอินใหม่แล้วลองอีกครั้ง");
+                    setTimeout(() => router.push("/login"), 1500);
+                    return;
+                  }
                   setError("บันทึกไม่สำเร็จ เชื่อมต่อไม่ได้หรือมีปัญหาชั่วคราว — ลองใหม่อีกครั้ง");
                 }
               });
